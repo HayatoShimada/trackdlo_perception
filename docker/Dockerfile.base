@@ -1,7 +1,7 @@
-FROM ros:humble-ros-base-jammy
+ARG ROS_DISTRO=humble
+FROM ros:${ROS_DISTRO}-ros-base-jammy
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV ROS_DISTRO=humble
 
 # Install common dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpcl-dev \
     libeigen3-dev \
     libopencv-dev \
-    # AMD GPU (Mesa/radeonsi) support for Gazebo & RViz rendering
+    # GPU (Mesa) support for RViz rendering
     libgl1-mesa-dri \
     libglx-mesa0 \
     mesa-utils \
