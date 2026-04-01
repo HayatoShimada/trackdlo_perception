@@ -1,47 +1,63 @@
 services:
-  # Base image (must be built first)
+  # Base image (build dependency only)
   trackdlo-base:
     build:
       context: ..
       dockerfile: docker/Dockerfile.base
-    image: trackdlo2-base:latest
+      args:
+        ROS_DISTRO: ${ROS_DISTRO:-humble}
+    image: trackdlo_ros2-base:latest
     command: "true"
 
-  # Gazebo Fortress + UR5 + RealSense D435 + DLO
-  trackdlo-gazebo:
+  # Core: RealSense + perception + HSV segmentation + preview
+  trackdlo-core:
     build:
       context: ..
-      dockerfile: docker/Dockerfile.gazebo
+      dockerfile: docker/Dockerfile.core
       args:
-        BASE_IMAGE: trackdlo2-base:latest
-    image: trackdlo2-gazebo:latest
-    container_name: trackdlo-gazebo
+        ROS_DISTRO: ${ROS_DISTRO:-humble}
+        BASE_IMAGE: trackdlo_ros2-base:latest
+    image: trackdlo_ros2-core:latest
+    container_name: trackdlo-core
     network_mode: host
     env_file: .env
     environment:
       - DISPLAY=${DISPLAY}
       - LIBGL_ALWAYS_SOFTWARE=0
+      - SEGMENTATION=${SEGMENTATION:-hsv}
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${HOME}/.Xauthority:/root/.Xauthority:rw
+      - /dev:/dev
+      - ../trackdlo_bringup/rviz:/ros2_ws/install/trackdlo_bringup/share/trackdlo_bringup/rviz:ro
+      - ../trackdlo_bringup/config:/ros2_ws/install/trackdlo_bringup/share/trackdlo_bringup/config:ro
+      - ../trackdlo_bringup/launch:/ros2_ws/install/trackdlo_bringup/share/trackdlo_bringup/launch:ro
+      - ../trackdlo_utils:/ros2_ws/src/trackdlo_utils
+      - ../trackdlo_segmentation:/ros2_ws/src/trackdlo_segmentation
+    privileged: true
     depends_on:
       trackdlo-base:
         condition: service_completed_successfully
     command: >
       bash -c "
-        source /ros2_ws/install/setup.bash &&
-        ros2 launch trackdlo_bringup ur5_gazebo.launch.py
+        cd /ros2_ws &&
+        source /opt/ros/$${ROS_DISTRO}/setup.sh &&
+        colcon build --packages-select trackdlo_utils trackdlo_segmentation &&
+        source install/setup.bash &&
+        ros2 launch trackdlo_bringup trackdlo.launch.py segmentation:=$${SEGMENTATION:-hsv}
       "
 
-  # TrackDLO Perception (init + tracking)
-  trackdlo-perception:
+  # SAM2 segmentation (separate container, optional)
+  trackdlo-sam2:
     build:
       context: ..
-      dockerfile: docker/Dockerfile.perception
+      dockerfile: docker/Dockerfile.sam2
       args:
-        BASE_IMAGE: trackdlo2-base:latest
-    image: trackdlo2-perception:latest
-    container_name: trackdlo-perception
+        ROS_DISTRO: ${ROS_DISTRO:-humble}
+        BASE_IMAGE: trackdlo_ros2-base:latest
+        SAM2_DEVICE: cpu
+    image: trackdlo_ros2-sam2:latest
+    container_name: trackdlo-sam2
     network_mode: host
     env_file: .env
     environment:
@@ -52,61 +68,4 @@ services:
     depends_on:
       trackdlo-base:
         condition: service_completed_successfully
-      trackdlo-gazebo:
-        condition: service_started
-    command: >
-      bash -c "
-        sleep 10 &&
-        source /ros2_ws/install/setup.bash &&
-        ros2 launch trackdlo_bringup trackdlo.launch.py
-      "
-
-  # MoveIt2 + UR5 manipulation planning
-  trackdlo-moveit:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.moveit
-      args:
-        BASE_IMAGE: trackdlo2-base:latest
-    image: trackdlo2-moveit:latest
-    container_name: trackdlo-moveit
-    network_mode: host
-    env_file: .env
-    environment:
-      - DISPLAY=${DISPLAY}
-    volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - ${HOME}/.Xauthority:/root/.Xauthority:rw
-    depends_on:
-      trackdlo-base:
-        condition: service_completed_successfully
-      trackdlo-gazebo:
-        condition: service_started
-    command: >
-      bash -c "
-        sleep 15 &&
-        source /ros2_ws/install/setup.bash &&
-        ros2 launch trackdlo_moveit moveit_planning.launch.py
-      "
-
-  # RViz2 Visualization (optional, uses gazebo image which has rviz2)
-  trackdlo-viz:
-    image: trackdlo2-gazebo:latest
-    container_name: trackdlo-viz
-    network_mode: host
-    env_file: .env
-    environment:
-      - DISPLAY=${DISPLAY}
-      - LIBGL_ALWAYS_SOFTWARE=0
-    volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - ${HOME}/.Xauthority:/root/.Xauthority:rw
-    depends_on:
-      trackdlo-perception:
-        condition: service_started
-    command: >
-      bash -c "
-        sleep 20 &&
-        source /ros2_ws/install/setup.bash &&
-        ros2 launch trackdlo_bringup visualize_output.launch.py
-      "
+    profiles: ["sam2"]
