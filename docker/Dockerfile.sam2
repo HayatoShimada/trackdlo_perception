@@ -1,0 +1,62 @@
+ARG ROS_DISTRO=humble
+ARG BASE_IMAGE=trackdlo_ros2-base:latest
+FROM ${BASE_IMAGE}
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Create workspace
+RUN mkdir -p /ros2_ws/src
+WORKDIR /ros2_ws
+
+# Copy only segmentation packages (base class + SAM2 node)
+COPY trackdlo_segmentation/ src/trackdlo_segmentation/
+COPY trackdlo_utils/ src/trackdlo_utils/
+COPY trackdlo_msgs/ src/trackdlo_msgs/
+
+# Build workspace (lightweight — only Python packages)
+RUN . /opt/ros/${ROS_DISTRO}/setup.sh && \
+    colcon build --packages-select trackdlo_segmentation trackdlo_utils trackdlo_msgs && \
+    rm -rf build log
+
+# Install SAM2 dependencies
+ARG SAM2_DEVICE=cpu
+
+# Install CUDA runtime for GPU inference (only when SAM2_DEVICE=cuda)
+RUN if [ "$SAM2_DEVICE" = "cuda" ]; then \
+        apt-get update && apt-get install -y --no-install-recommends \
+            wget gnupg2 && \
+        wget -qO /tmp/cuda-keyring.deb \
+            https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb && \
+        dpkg -i /tmp/cuda-keyring.deb && rm /tmp/cuda-keyring.deb && \
+        apt-get update && apt-get install -y --no-install-recommends \
+            cuda-cudart-12-6 libcublas-12-6 libcusparse-12-6 \
+            libcusolver-12-6 libcufft-12-6 libcurand-12-6 && \
+        rm -rf /var/lib/apt/lists/* ; \
+    fi
+ENV PATH="/usr/local/cuda/bin:${PATH}"
+ENV LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"
+
+# Install PyTorch + SAM2
+RUN if [ "$SAM2_DEVICE" = "cpu" ]; then \
+        pip3 install --no-cache-dir \
+            torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
+        SAM2_BUILD_CUDA=0 pip3 install --no-cache-dir --no-build-isolation \
+            "git+https://github.com/facebookresearch/sam2.git" && \
+        pip3 install --no-cache-dir huggingface_hub ; \
+    elif [ "$SAM2_DEVICE" = "cuda" ]; then \
+        pip3 install --no-cache-dir torch torchvision && \
+        pip3 install --no-cache-dir --no-build-isolation \
+            "git+https://github.com/facebookresearch/sam2.git" && \
+        pip3 install --no-cache-dir huggingface_hub ; \
+    fi
+
+# Pre-download SAM2 model weights
+ARG SAM2_CHECKPOINT=facebook/sam2.1-hiera-small
+RUN CUDA_VISIBLE_DEVICES="" python3 -c "\
+from sam2.sam2_image_predictor import SAM2ImagePredictor; \
+SAM2ImagePredictor.from_pretrained('${SAM2_CHECKPOINT}', device='cpu')"
+
+# Source workspace on entry
+RUN echo "source /ros2_ws/install/setup.bash" >> /root/.bashrc
+
+CMD ["bash", "-c", "source /ros2_ws/install/setup.bash && ros2 run trackdlo_utils sam2_segmentation"]
