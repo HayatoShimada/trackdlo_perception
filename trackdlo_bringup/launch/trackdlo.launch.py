@@ -21,7 +21,7 @@ def _launch_setup(context, *args, **kwargs):
     # use_external_mask is true when segmentation is not 'hsv'
     use_external_mask = PythonExpression(["'", segmentation, "' != 'hsv'"])
 
-    # RealSense camera launch (resolved at runtime, not at parse time)
+    # RealSense camera launch
     realsense_dir = get_package_share_directory('realsense2_camera')
     realsense_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -80,11 +80,11 @@ def _launch_setup(context, *args, **kwargs):
             ],
         ),
 
-        # --- HSV Tuner (only when segmentation:=hsv_tuner) ---
+        # --- HSV Segmentation with GUI (from trackdlo_segmentation) ---
         Node(
-            package='trackdlo_utils',
-            executable='hsv_tuner',
-            name='hsv_tuner',
+            package='trackdlo_segmentation',
+            executable='hsv_segmentation',
+            name='hsv_segmentation',
             output='screen',
             parameters=[params_file],
             condition=LaunchConfigurationEquals('segmentation', 'hsv_tuner'),
@@ -134,7 +134,7 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'segmentation', default_value='hsv',
-            description='Segmentation method: hsv (default), hsv_tuner, or sam2',
+            description='Segmentation method: hsv (built-in), hsv_tuner (GUI), sam2',
             choices=['hsv', 'hsv_tuner', 'sam2'],
         ),
         DeclareLaunchArgument(

@@ -65,11 +65,12 @@ init_tracker:
     hsv_threshold_upper_limit: "135 255 255"
     hsv_threshold_lower_limit: "85 50 20"
 
-hsv_tuner:
+hsv_segmentation:
   ros__parameters:
     rgb_topic: "/camera/color/image_raw"
     hsv_threshold_upper_limit: "135 255 255"
     hsv_threshold_lower_limit: "85 50 20"
+    enable_gui: true
 
 sam2_segmentation:
   ros__parameters:
