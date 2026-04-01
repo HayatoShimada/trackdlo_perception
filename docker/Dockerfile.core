@@ -1,14 +1,25 @@
-ARG BASE_IMAGE=trackdlo2-base:latest
+ARG ROS_DISTRO=humble
+ARG BASE_IMAGE=trackdlo_ros2-base:latest
 FROM ${BASE_IMAGE}
 
 ENV DEBIAN_FRONTEND=noninteractive
+
+# Install RealSense camera driver, RViz2, TF2, robot_state_publisher
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-${ROS_DISTRO}-realsense2-camera \
+    ros-${ROS_DISTRO}-realsense2-description \
+    ros-${ROS_DISTRO}-rviz2 \
+    ros-${ROS_DISTRO}-robot-state-publisher \
+    ros-${ROS_DISTRO}-xacro \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create workspace
 RUN mkdir -p /ros2_ws/src
 WORKDIR /ros2_ws
 
-# Copy perception and utils packages
+# Copy packages
 COPY trackdlo_perception/ src/trackdlo_perception/
+COPY trackdlo_segmentation/ src/trackdlo_segmentation/
 COPY trackdlo_utils/ src/trackdlo_utils/
 COPY trackdlo_bringup/ src/trackdlo_bringup/
 COPY trackdlo_msgs/ src/trackdlo_msgs/
