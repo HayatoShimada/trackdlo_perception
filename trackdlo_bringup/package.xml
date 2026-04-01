@@ -3,26 +3,21 @@
 <package format="3">
   <name>trackdlo_bringup</name>
   <version>2.0.0</version>
-  <description>TrackDLO2: Launch files, configuration, and bringup for the full pipeline</description>
+  <description>trackdlo_ros2: Launch files, configuration, and bringup</description>
   <maintainer email="todo@todo.com">TODO</maintainer>
   <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <exec_depend>trackdlo_perception</exec_depend>
+  <exec_depend>trackdlo_segmentation</exec_depend>
   <exec_depend>trackdlo_utils</exec_depend>
-  <exec_depend>trackdlo_description</exec_depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>rviz2</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
-  <exec_depend>ros_gz_sim</exec_depend>
-  <exec_depend>ros_gz_bridge</exec_depend>
-  <exec_depend>ur_description</exec_depend>
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>xacro</exec_depend>
-  <exec_depend>ros2_control</exec_depend>
-  <exec_depend>gz_ros2_control</exec_depend>
   <exec_depend>realsense2_camera</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
