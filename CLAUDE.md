@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-TrackDLO2 is a ROS2 Humble + Gazebo Fortress system for real-time tracking and manipulation of Deformable Linear Objects (DLO). It uses RGB-D camera input (RealSense D435 or Gazebo simulation) to detect/track DLO via CPD-LLE algorithm, with UR5 robot arm for autonomous manipulation.
+trackdlo_ros2 is a ROS2 (Humble/Jazzy) system for real-time tracking of Deformable Linear Objects (DLO). It uses RGB-D camera input (Intel RealSense D415/D435/D455) to detect and track DLO via the CPD-LLE algorithm, with a pluggable segmentation architecture and a 4-panel preview window.
 
 ## Build & Development Commands
 
 ### Native Build (ROS2 workspace)
 ```bash
 # Build all packages
-colcon build --packages-select trackdlo_msgs trackdlo_perception trackdlo_utils trackdlo_bringup trackdlo_description --cmake-args -DCMAKE_BUILD_TYPE=Release
+colcon build --packages-select trackdlo_msgs trackdlo_segmentation trackdlo_perception trackdlo_utils trackdlo_bringup --cmake-args -DCMAKE_BUILD_TYPE=Release
 
 # Build single package
 colcon build --packages-select trackdlo_perception --cmake-args -DCMAKE_BUILD_TYPE=Release
@@ -23,79 +23,91 @@ source install/setup.bash
 ### Docker Build & Run
 ```bash
 cd docker/
-bash build.sh              # All images
-bash build.sh sim          # Simulation only
-bash build.sh realsense    # RealSense only
 
-# Run (GPU type: amd | nvidia)
-./run.sh amd sim           # Simulation
-./run.sh nvidia realsense  # RealSense
-./run.sh amd sim -d        # Detached mode
+# Build all images
+bash build.sh
+
+# Build core only
+bash build.sh core
+
+# Build SAM2 (CPU)
+bash build.sh sam2
+
+# Build SAM2 (CUDA)
+bash build.sh sam2-cuda
+
+# Run
+./run.sh                  # HSV segmentation (default)
+./run.sh hsv_tuner        # HSV with tuner GUI
+./run.sh sam2             # SAM2 segmentation
+./run.sh hsv -d           # Detached mode
+
+# Build for Jazzy
+ROS_DISTRO=jazzy bash build.sh
 ```
 
 ### Tests & Linting
 ```bash
 # Run tests
-colcon test --packages-select trackdlo_perception trackdlo_utils trackdlo_bringup --return-code-on-test-failure
+colcon test --packages-select trackdlo_segmentation trackdlo_perception trackdlo_utils trackdlo_bringup --return-code-on-test-failure
 
 # Lint Python
-flake8 trackdlo_perception/trackdlo_perception/ trackdlo_utils/trackdlo_utils/ --max-line-length=150 --ignore=E501,W503,E741
+flake8 trackdlo_perception/trackdlo_perception/ trackdlo_utils/trackdlo_utils/ trackdlo_segmentation/trackdlo_segmentation/ --max-line-length=150 --ignore=E501,W503,E741
 ```
 
 ### Launch Commands
 ```bash
-# Simulation full pipeline
-ros2 launch trackdlo_bringup full_pipeline.launch.py
-
-# Perception only (sim)
+# Default (HSV segmentation)
 ros2 launch trackdlo_bringup trackdlo.launch.py
 
-# RealSense test
-ros2 launch trackdlo_bringup realsense_test.launch.py
-ros2 launch trackdlo_bringup realsense_test.launch.py segmentation:=hsv_tuner
-ros2 launch trackdlo_bringup realsense_test.launch.py segmentation:=sam2
+# HSV tuner GUI
+ros2 launch trackdlo_bringup trackdlo.launch.py segmentation:=hsv_tuner
+
+# SAM2 segmentation
+ros2 launch trackdlo_bringup trackdlo.launch.py segmentation:=sam2
+
+# Without RViz
+ros2 launch trackdlo_bringup trackdlo.launch.py rviz:=false
 ```
 
 ## Architecture
 
-### Multi-Container Docker Architecture
-Four containers communicating via ROS2 topics/services only (host network, CycloneDDS):
-- **trackdlo-gazebo**: Gazebo simulation, robot_state_publisher, controllers
-- **trackdlo-perception**: init_tracker (Python) + trackdlo C++ tracking node
-- **trackdlo-moveit**: move_group (OMPL) + dlo_manipulation_node (state machine)
-- **trackdlo-viz**: RViz2 visualization
+### Docker Architecture
+1-2 containers communicating via ROS2 topics (host network, CycloneDDS):
+- **trackdlo-core**: RealSense driver + perception + HSV segmentation + composite view + RViz2
+- **trackdlo-sam2** (optional): SAM2 segmentation node (via `--profile sam2`)
 
 ### Package Structure
 
 | Package | Language | Build | Role |
 |---------|----------|-------|------|
 | `trackdlo_perception` | C++17 + Python | ament_cmake | Core CPD-LLE tracking algorithm + initialization |
-| `trackdlo_moveit` | C++17 | ament_cmake | MoveIt2 planning + DLO manipulation state machine |
-| `trackdlo_bringup` | Launch/Config | ament_cmake | Launch files, YAML params, RViz config, Gazebo worlds |
-| `trackdlo_description` | URDF/xacro | ament_cmake | UR5 + RealSense D435 robot description |
-| `trackdlo_utils` | Python | ament_python | Depth converter, HSV tuner, SAM2 segmentation, test tools |
-| `trackdlo_msgs` | ROS IDL | ament_cmake | Custom messages (minimal, for future use) |
+| `trackdlo_segmentation` | Python | ament_python | Pluggable segmentation interface (base class + HSV) |
+| `trackdlo_utils` | Python | ament_python | Composite view, SAM2 segmentation, param tuner, test tools |
+| `trackdlo_bringup` | Launch/Config | ament_cmake | Launch files, YAML params, RViz config |
+| `trackdlo_msgs` | ROS IDL | ament_cmake | Custom messages (reserved for future use) |
 
 ### Processing Pipeline
-1. **Initialization** (`trackdlo_perception/trackdlo_perception/initialize.py`): HSV threshold → skeleton extraction → spline fitting → 45 equally-spaced 3D nodes → publishes once to `/trackdlo/init_nodes`
-2. **Per-frame tracking** (`trackdlo_perception/src/trackdlo_node.cpp` + `trackdlo.cpp`): RGB-D sync → HSV mask → point cloud → voxel downsample → visibility estimation → CPD-LLE EM iterations → updated node positions
-3. **Robot manipulation** (`trackdlo_moveit/src/dlo_manipulation_node.cpp`): Subscribes to tracking results → extracts endpoints → state machine (GOTO_A ↔ GOTO_B) → MoveIt trajectory planning → execution
+1. **Initialization** (`trackdlo_perception/trackdlo_perception/initialize.py`): HSV threshold → skeleton extraction → spline fitting → equally-spaced 3D nodes → publishes once to `/trackdlo/init_nodes`
+2. **Per-frame tracking** (`trackdlo_perception/src/trackdlo_node.cpp` + `trackdlo.cpp`): RGB-D sync → segmentation mask → point cloud → voxel downsample → visibility estimation → CPD-LLE EM iterations → updated node positions
 
 ### Key Source Files
 - `trackdlo_perception/src/trackdlo.cpp` — CPD-LLE algorithm core (cpd_lle method)
 - `trackdlo_perception/src/trackdlo_node.cpp` — ROS2 node: image sync, preprocessing, visibility detection
 - `trackdlo_perception/src/utils.cpp` — Projection, depth conversion, occlusion helpers
 - `trackdlo_perception/trackdlo_perception/initialize.py` — Initialization pipeline (InitTrackerNode)
-- `trackdlo_moveit/src/dlo_manipulation_node.cpp` — UR5 manipulation state machine
-- `trackdlo_bringup/config/trackdlo_params.yaml` — Simulation tracking parameters
-- `trackdlo_bringup/config/realsense_params.yaml` — RealSense tracking parameters
+- `trackdlo_segmentation/trackdlo_segmentation/base.py` — SegmentationNodeBase (pluggable interface)
+- `trackdlo_segmentation/trackdlo_segmentation/hsv_node.py` — HSV segmentation with GUI tuner
+- `trackdlo_bringup/config/realsense_params.yaml` — Tracking parameters
 
 ### Key ROS2 Topics
-- `/trackdlo/init_nodes` (PointCloud2) — Initial 45 nodes, published once
+- `/trackdlo/init_nodes` (PointCloud2) — Initial nodes, published once
 - `/trackdlo/results_pc` (PointCloud2) — Per-frame tracked node positions
-- `/trackdlo/segmentation_mask` (Image) — Optional external mask from HSV tuner or SAM2
-- `/trackdlo/endpoints` (PoseArray) — DLO endpoints in world frame for manipulation
-- `/dlo_manipulation/enable` (SetBool service) — Enable/disable autonomous following
+- `/trackdlo/segmentation_mask` (Image) — Segmentation mask (from HSV/SAM2/external)
+- `/trackdlo/results_img` (Image) — Tracking result visualization
+
+### Segmentation Architecture
+All segmentation nodes inherit from `SegmentationNodeBase` and publish to `/trackdlo/segmentation_mask` (mono8). New backends (YOLO, DeepLab, etc.) can be added by subclassing `SegmentationNodeBase`.
 
 ## Code Conventions
 
@@ -107,5 +119,4 @@ Four containers communicating via ROS2 topics/services only (host network, Cyclo
 - RGB-D synchronization uses `message_filters::ApproximateTimeSynchronizer`
 - Perception nodes use `respawn=True, respawn_delay=3.0` in launch files
 - Thread safety via `std::mutex` and `std::atomic` in C++ nodes
-- Python entry points defined in `trackdlo_utils/setup.py` (9 console scripts)
-- Sim vs real differences: downsample leaf size (0.008m vs 0.02m), max_iter (50 vs 20), dlo_pixel_width (10 vs 40)
+- Segmentation nodes inherit from `trackdlo_segmentation.SegmentationNodeBase`
