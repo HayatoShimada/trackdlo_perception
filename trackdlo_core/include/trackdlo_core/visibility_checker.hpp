@@ -1,7 +1,7 @@
 // Copyright 2026 Hayato Shimada
 // SPDX-License-Identifier: BSD-3-Clause
-#ifndef TRACKDLO_PERCEPTION_VISIBILITY_CHECKER_HPP
-#define TRACKDLO_PERCEPTION_VISIBILITY_CHECKER_HPP
+#ifndef TRACKDLO_CORE__VISIBILITY_CHECKER_HPP_
+#define TRACKDLO_CORE__VISIBILITY_CHECKER_HPP_
 
 #include <opencv2/opencv.hpp>
 #include <Eigen/Dense>
@@ -31,4 +31,4 @@ public:
 
 } // namespace trackdlo_core
 
-#endif // TRACKDLO_PERCEPTION_VISIBILITY_CHECKER_HPP
+#endif // TRACKDLO_CORE__VISIBILITY_CHECKER_HPP_

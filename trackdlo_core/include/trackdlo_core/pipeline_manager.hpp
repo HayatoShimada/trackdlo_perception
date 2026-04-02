@@ -1,7 +1,7 @@
 // Copyright 2026 Hayato Shimada
 // SPDX-License-Identifier: BSD-3-Clause
-#ifndef TRACKDLO_PIPELINE_MANAGER_HPP
-#define TRACKDLO_PIPELINE_MANAGER_HPP
+#ifndef TRACKDLO_CORE__PIPELINE_MANAGER_HPP_
+#define TRACKDLO_CORE__PIPELINE_MANAGER_HPP_
 
 #include "trackdlo_core/trackdlo.hpp"
 #include "trackdlo_core/image_preprocessor.hpp"
@@ -80,4 +80,4 @@ private:
 
 } // namespace trackdlo_core
 
-#endif // TRACKDLO_PIPELINE_MANAGER_HPP
+#endif // TRACKDLO_CORE__PIPELINE_MANAGER_HPP_

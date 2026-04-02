@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
-#ifndef TRACKDLO_PERCEPTION__EVALUATOR_HPP_
-#define TRACKDLO_PERCEPTION__EVALUATOR_HPP_
+#ifndef TRACKDLO_CORE__EVALUATOR_HPP_
+#define TRACKDLO_CORE__EVALUATOR_HPP_
 
 #include "trackdlo_core/trackdlo.hpp"
 
@@ -51,4 +51,4 @@ class evaluator
         int num_of_nodes_;
 };
 
-#endif  // TRACKDLO_PERCEPTION__EVALUATOR_HPP_
+#endif  // TRACKDLO_CORE__EVALUATOR_HPP_

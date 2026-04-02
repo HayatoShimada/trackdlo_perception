@@ -1,7 +1,7 @@
 // Copyright 2026 Hayato Shimada
 // SPDX-License-Identifier: BSD-3-Clause
-#ifndef TRACKDLO_PERCEPTION_IMAGE_PREPROCESSOR_HPP
-#define TRACKDLO_PERCEPTION_IMAGE_PREPROCESSOR_HPP
+#ifndef TRACKDLO_CORE__IMAGE_PREPROCESSOR_HPP_
+#define TRACKDLO_CORE__IMAGE_PREPROCESSOR_HPP_
 
 #include <opencv2/opencv.hpp>
 #include <vector>
@@ -36,4 +36,4 @@ private:
 
 } // namespace trackdlo_core
 
-#endif // TRACKDLO_PERCEPTION_IMAGE_PREPROCESSOR_HPP
+#endif // TRACKDLO_CORE__IMAGE_PREPROCESSOR_HPP_

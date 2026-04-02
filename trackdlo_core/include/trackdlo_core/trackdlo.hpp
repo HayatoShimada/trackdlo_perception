@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
-#ifndef TRACKDLO_PERCEPTION__TRACKDLO_HPP_
-#define TRACKDLO_PERCEPTION__TRACKDLO_HPP_
+#ifndef TRACKDLO_CORE__TRACKDLO_HPP_
+#define TRACKDLO_CORE__TRACKDLO_HPP_
 
 #include <Eigen/Dense>
 #include <Eigen/Core>
@@ -142,4 +142,4 @@ class trackdlo
                                                  const std::vector<int> visible_nodes, int alignment, int alignment_node_idx = -1);
 };
 
-#endif  // TRACKDLO_PERCEPTION__TRACKDLO_HPP_
+#endif  // TRACKDLO_CORE__TRACKDLO_HPP_

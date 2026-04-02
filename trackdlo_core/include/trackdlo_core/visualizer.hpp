@@ -1,7 +1,7 @@
 // Copyright 2026 Hayato Shimada
 // SPDX-License-Identifier: BSD-3-Clause
-#ifndef TRACKDLO_VISUALIZER_HPP
-#define TRACKDLO_VISUALIZER_HPP
+#ifndef TRACKDLO_CORE__VISUALIZER_HPP_
+#define TRACKDLO_CORE__VISUALIZER_HPP_
 
 #include <opencv2/opencv.hpp>
 #include <Eigen/Dense>
@@ -34,4 +34,4 @@ public:
 
 } // namespace trackdlo_core
 
-#endif // TRACKDLO_VISUALIZER_HPP
+#endif // TRACKDLO_CORE__VISUALIZER_HPP_

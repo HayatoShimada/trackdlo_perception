@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
-#ifndef TRACKDLO_PERCEPTION__UTILS_HPP_
-#define TRACKDLO_PERCEPTION__UTILS_HPP_
+#ifndef TRACKDLO_CORE__UTILS_HPP_
+#define TRACKDLO_CORE__UTILS_HPP_
 
 #include "trackdlo_core/trackdlo.hpp"
 
@@ -53,4 +53,4 @@ visualization_msgs::msg::MarkerArray MatrixXd2MarkerArray(std::vector<MatrixXd> 
 MatrixXd cross_product(MatrixXd vec1, MatrixXd vec2);
 double dot_product(MatrixXd vec1, MatrixXd vec2);
 
-#endif  // TRACKDLO_PERCEPTION__UTILS_HPP_
+#endif  // TRACKDLO_CORE__UTILS_HPP_

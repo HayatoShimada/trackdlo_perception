@@ -1,7 +1,7 @@
 // Copyright 2026 Hayato Shimada
 // SPDX-License-Identifier: BSD-3-Clause
-#ifndef POINTCLOUD_CUDA_CUH
-#define POINTCLOUD_CUDA_CUH
+#ifndef TRACKDLO_CORE__POINTCLOUD_CUDA_CUH_
+#define TRACKDLO_CORE__POINTCLOUD_CUDA_CUH_
 
 #include <opencv2/core.hpp>
 #include <pcl/point_cloud.h>
@@ -27,4 +27,4 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr generate_downsampled_pointcloud(
 } // namespace cuda
 } // namespace trackdlo_core
 
-#endif // POINTCLOUD_CUDA_CUH
+#endif // TRACKDLO_CORE__POINTCLOUD_CUDA_CUH_
