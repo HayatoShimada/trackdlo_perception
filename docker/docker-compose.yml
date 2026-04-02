@@ -6,7 +6,7 @@ services:
       dockerfile: docker/Dockerfile.base
       args:
         ROS_DISTRO: ${ROS_DISTRO:-humble}
-    image: trackdlo_ros2-base:latest
+    image: trackdlo_perception-base:latest
     command: "true"
 
   # Core: RealSense + perception + HSV segmentation + preview
@@ -16,8 +16,8 @@ services:
       dockerfile: docker/Dockerfile.core
       args:
         ROS_DISTRO: ${ROS_DISTRO:-humble}
-        BASE_IMAGE: trackdlo_ros2-base:latest
-    image: trackdlo_ros2-core:latest
+        BASE_IMAGE: trackdlo_perception-base:latest
+    image: trackdlo_perception-core:latest
     container_name: trackdlo-core
     network_mode: host
     env_file: .env

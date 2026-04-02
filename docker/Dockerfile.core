@@ -1,5 +1,5 @@
 ARG ROS_DISTRO=humble
-ARG BASE_IMAGE=trackdlo_ros2-base:latest
+ARG BASE_IMAGE=trackdlo_perception-base:latest
 FROM ${BASE_IMAGE}
 
 ENV DEBIAN_FRONTEND=noninteractive
