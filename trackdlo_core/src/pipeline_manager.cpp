@@ -1,7 +1,9 @@
 #include "trackdlo_core/pipeline_manager.hpp"
 #include <pcl/filters/voxel_grid.h>
 #include <iostream>
+#ifdef USE_CUDA
 #include "trackdlo_core/pointcloud_cuda.cuh"
+#endif
 
 namespace trackdlo_core {
 
@@ -76,13 +78,39 @@ PipelineResult PipelineManager::process(const cv::Mat& cur_image_orig, const cv:
     result.mask = mask;
     result.cur_image = cur_image;
 
+#ifdef USE_CUDA
     // Point cloud generation and downsampling on GPU
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr downsampled_ptr = trackdlo_core::cuda::generate_downsampled_pointcloud(
         mask, depth_image, cur_image_orig, proj_matrix, downsample_leaf_size_);
-    
     if (downsampled_ptr) {
         result.cur_pc_downsampled = *downsampled_ptr;
     }
+#else
+    // CPU fallback: generate point cloud from mask + depth
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>());
+    double fx = proj_matrix(0, 0), fy = proj_matrix(1, 1);
+    double cx = proj_matrix(0, 2), cy = proj_matrix(1, 2);
+    for (int v = 0; v < mask.rows; v++) {
+        for (int u = 0; u < mask.cols; u++) {
+            if (mask.at<uchar>(v, u) == 0) continue;
+            uint16_t d = depth_image.at<uint16_t>(v, u);
+            if (d == 0) continue;
+            double z = d / 1000.0;
+            pcl::PointXYZRGB pt;
+            pt.x = (u - cx) * z / fx;
+            pt.y = (v - cy) * z / fy;
+            pt.z = z;
+            cv::Vec3b bgr = cur_image_orig.at<cv::Vec3b>(v, u);
+            pt.r = bgr[2]; pt.g = bgr[1]; pt.b = bgr[0];
+            cloud->push_back(pt);
+        }
+    }
+    // Voxel grid downsampling
+    pcl::VoxelGrid<pcl::PointXYZRGB> vg;
+    vg.setInputCloud(cloud);
+    vg.setLeafSize(downsample_leaf_size_, downsample_leaf_size_, downsample_leaf_size_);
+    vg.filter(result.cur_pc_downsampled);
+#endif
 
     Eigen::MatrixXd X = result.cur_pc_downsampled.getMatrixXfMap().topRows(3).transpose().cast<double>();
 

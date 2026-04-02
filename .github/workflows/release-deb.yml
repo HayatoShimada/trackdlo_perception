@@ -12,7 +12,7 @@ jobs:
       matrix:
         ros_distro: [humble]
     container:
-      image: ros:${{ matrix.ros_distro }}-ros-base
+      image: ros:${{ matrix.ros_distro }}-perception
     steps:
       - uses: actions/checkout@v4
 
