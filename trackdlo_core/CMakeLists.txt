@@ -140,6 +140,17 @@ install(PROGRAMS
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
+
+  find_package(ament_cmake_gtest REQUIRED)
+
+  ament_add_gtest(test_trackdlo test/test_trackdlo.cpp)
+  target_link_libraries(test_trackdlo trackdlo_core)
+
+  ament_add_gtest(test_image_preprocessor test/test_image_preprocessor.cpp)
+  target_link_libraries(test_image_preprocessor trackdlo_core)
+
+  ament_add_gtest(test_visibility_checker test/test_visibility_checker.cpp)
+  target_link_libraries(test_visibility_checker trackdlo_core)
 endif()
 
 ament_package()
