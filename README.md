@@ -101,25 +101,6 @@ ros2 launch trackdlo_bringup trackdlo.launch.py rviz:=false
 | `hsv` (default) | HSV thresholding | DLO color is known, parameters tuned |
 | `hsv_tuner` | Real-time slider GUI | Finding HSV values for a new DLO |
 
-### Pluggable Segmentation
-
-Add new segmentation backends by subclassing `SegmentationNodeBase`:
-
-```python
-from trackdlo_segmentation import SegmentationNodeBase
-
-class MySegmentationNode(SegmentationNodeBase):
-    def __init__(self):
-        super().__init__('my_segmentation')
-
-    def segment(self, cv_image):
-        # cv_image: BGR (H, W, 3)
-        # return: binary mask (H, W), values 0 or 255
-        ...
-```
-
-All segmentation nodes publish to `/trackdlo/segmentation_mask` (mono8).
-
 ## Architecture
 
 ### Docker
@@ -160,14 +141,97 @@ trackdlo-core container
 [composite_view]  <- 4-panel preview window
 ```
 
-## Integration with Other ROS2 Projects
+## Usage
 
-trackdlo_perception uses only standard ROS2 message types. Subscribe from any container sharing the same `ROS_DOMAIN_ID`:
+### 1. Launch with RealSense Camera
+
+Connect an Intel RealSense D415/D435/D455 and run:
+
+```bash
+# Default HSV segmentation
+ros2 launch trackdlo_bringup trackdlo.launch.py
+
+# With HSV tuner GUI (adjust thresholds interactively)
+ros2 launch trackdlo_bringup trackdlo.launch.py segmentation:=hsv_tuner
+
+# Without RViz
+ros2 launch trackdlo_bringup trackdlo.launch.py rviz:=false
+```
+
+The 4-panel preview window opens automatically showing camera feed, segmentation mask, overlay, and tracking results.
+
+### 2. Subscribe to Tracking Results
+
+From your own ROS2 node, subscribe to the tracked DLO positions:
 
 ```python
-# Subscribe to tracking results from another project
-self.create_subscription(PointCloud2, '/trackdlo/results_pc', self.callback, 10)
+from sensor_msgs.msg import PointCloud2
+from sensor_msgs_py import point_cloud2
+
+class MyNode(Node):
+    def __init__(self):
+        super().__init__('my_node')
+        self.create_subscription(
+            PointCloud2, '/trackdlo/results_pc', self.on_tracking, 10)
+
+    def on_tracking(self, msg):
+        # Each point is a tracked DLO node (x, y, z in camera frame)
+        points = list(point_cloud2.read_points(msg, field_names=('x', 'y', 'z')))
+        # points[0] = first endpoint, points[-1] = last endpoint
 ```
+
+### 3. Use as a Dependency in Your Package
+
+Add to your `package.xml`:
+
+```xml
+<exec_depend>trackdlo_core</exec_depend>
+```
+
+### Available Topics
+
+| Topic | Type | Description |
+|-------|------|-------------|
+| `/trackdlo/results_pc` | PointCloud2 | Tracked DLO node positions (main output) |
+| `/trackdlo/results_img` | Image | Tracking result visualization |
+| `/trackdlo/segmentation_mask` | Image | Segmentation mask (mono8) |
+| `/trackdlo/init_nodes` | PointCloud2 | Initial nodes (published once) |
+
+### 4. Add Custom Segmentation
+
+Create a new segmentation backend by subclassing `SegmentationNodeBase`:
+
+```python
+from trackdlo_segmentation import SegmentationNodeBase
+import numpy as np
+
+class YoloSegmentationNode(SegmentationNodeBase):
+    def __init__(self):
+        super().__init__('yolo_segmentation')
+        # Initialize your model here
+
+    def segment(self, cv_image: np.ndarray) -> np.ndarray:
+        # Input: BGR image (H, W, 3), dtype uint8
+        # Output: binary mask (H, W), dtype uint8, values 0 or 255
+        mask = your_model.predict(cv_image)
+        return mask
+```
+
+Run your node alongside trackdlo with external mask mode:
+
+```bash
+# Terminal 1: launch trackdlo with external mask
+ros2 launch trackdlo_bringup trackdlo.launch.py segmentation:=hsv_tuner
+
+# Terminal 2: run your segmentation node (replaces HSV)
+ros2 run your_package yolo_segmentation
+```
+
+All segmentation nodes publish to `/trackdlo/segmentation_mask` (mono8).
+
+## Integration with Other ROS2 Projects
+
+trackdlo_perception uses only standard ROS2 message types. Any ROS2 node sharing the same `ROS_DOMAIN_ID` can subscribe to tracking results — no custom messages needed.
 
 ## Key Parameters
 
