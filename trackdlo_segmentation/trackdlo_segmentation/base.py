@@ -12,7 +12,6 @@ Output is published to /trackdlo/segmentation_mask (mono8).
 from abc import abstractmethod
 
 import numpy as np
-import rclpy
 from cv_bridge import CvBridge
 from rclpy.node import Node
 from sensor_msgs.msg import Image
