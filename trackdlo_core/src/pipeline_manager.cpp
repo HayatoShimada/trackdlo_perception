@@ -4,7 +4,10 @@
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
 #include "trackdlo_core/pipeline_manager.hpp"
+
 #include <pcl/filters/voxel_grid.h>
+
+#include <cmath>
 #include <iostream>
 #ifdef USE_CUDA
 #include "trackdlo_core/pointcloud_cuda.cuh"
@@ -105,28 +108,49 @@ PipelineResult PipelineManager::process(
   }
 #else
   // CPU fallback: generate point cloud from mask + depth
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>());
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(
+    new pcl::PointCloud<pcl::PointXYZRGB>());
   double fx = proj_matrix(0, 0), fy = proj_matrix(1, 1);
   double cx = proj_matrix(0, 2), cy = proj_matrix(1, 2);
+  bool is_float_depth = (depth_image.type() == CV_32FC1);
+
   for (int v = 0; v < mask.rows; v++) {
     for (int u = 0; u < mask.cols; u++) {
       if (mask.at<uchar>(v, u) == 0) {continue;}
-      uint16_t d = depth_image.at<uint16_t>(v, u);
-      if (d == 0) {continue;}
-      double z = d / 1000.0;
+
+      double z = 0.0;
+      if (is_float_depth) {
+        float zf = depth_image.at<float>(v, u);
+        if (zf <= 0.0f || std::isnan(zf) || std::isinf(zf)) {continue;}
+        z = static_cast<double>(zf);
+      } else {
+        uint16_t d = depth_image.at<uint16_t>(v, u);
+        if (d == 0) {continue;}
+        z = d / 1000.0;
+      }
+
       pcl::PointXYZRGB pt;
-      pt.x = (u - cx) * z / fx;
-      pt.y = (v - cy) * z / fy;
-      pt.z = z;
+      pt.x = static_cast<float>((u - cx) * z / fx);
+      pt.y = static_cast<float>((v - cy) * z / fy);
+      pt.z = static_cast<float>(z);
       cv::Vec3b bgr = cur_image_orig.at<cv::Vec3b>(v, u);
-      pt.r = bgr[2]; pt.g = bgr[1]; pt.b = bgr[0];
+      pt.r = bgr[2];
+      pt.g = bgr[1];
+      pt.b = bgr[0];
       cloud->push_back(pt);
     }
   }
+
+  if (cloud->empty()) {
+    return result;
+  }
+
   // Voxel grid downsampling
   pcl::VoxelGrid<pcl::PointXYZRGB> vg;
   vg.setInputCloud(cloud);
-  vg.setLeafSize(downsample_leaf_size_, downsample_leaf_size_, downsample_leaf_size_);
+  vg.setLeafSize(
+    downsample_leaf_size_, downsample_leaf_size_,
+    downsample_leaf_size_);
   vg.filter(result.cur_pc_downsampled);
 #endif
 

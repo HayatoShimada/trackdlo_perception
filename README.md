@@ -257,6 +257,20 @@ Configured in `trackdlo_bringup/config/realsense_params.yaml`:
 - OpenCV, PCL, Eigen3
 - scikit-image, scipy, Open3D
 
+## Citation
+
+If you use this software in your research, please cite the original TrackDLO paper:
+
+```bibtex
+@article{trackdlo2023,
+  title={TrackDLO: Tracking Deformable Linear Objects Under Occlusion with Motion Coherence},
+  author={Lai, Jingyi and Lu, Biao and Liu, Yuhong and Sundaresan, Priya and Bhatt, Kaushik and Goldberg, Ken},
+  journal={IEEE Robotics and Automation Letters},
+  year={2023},
+  publisher={IEEE}
+}
+```
+
 ## License
 
 BSD-3-Clause

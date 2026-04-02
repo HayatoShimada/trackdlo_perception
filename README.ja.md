@@ -258,6 +258,20 @@ trackdlo_perception は標準 ROS2 メッセージ型のみを使用。同じ `R
 - OpenCV, PCL, Eigen3
 - scikit-image, scipy, Open3D
 
+## 引用
+
+本ソフトウェアを研究に使用する場合は、元の TrackDLO 論文を引用してください:
+
+```bibtex
+@article{trackdlo2023,
+  title={TrackDLO: Tracking Deformable Linear Objects Under Occlusion with Motion Coherence},
+  author={Lai, Jingyi and Lu, Biao and Liu, Yuhong and Sundaresan, Priya and Bhatt, Kaushik and Goldberg, Ken},
+  journal={IEEE Robotics and Automation Letters},
+  year={2023},
+  publisher={IEEE}
+}
+```
+
 ## ライセンス
 
 BSD-3-Clause
