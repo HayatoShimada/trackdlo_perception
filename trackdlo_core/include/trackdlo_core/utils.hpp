@@ -1,5 +1,8 @@
 // Copyright 2026 Hayato Shimada
-// SPDX-License-Identifier: BSD-3-Clause
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 #pragma once
 
 #ifndef TRACKDLO_CORE__UTILS_HPP_
@@ -12,43 +15,48 @@ using cv::Mat;
 
 void signal_callback_handler(int signum);
 
-template <typename T> void print_1d_vector(const std::vector<T>& vec) {
-    for (auto item : vec) {
-        std::cout << item << " ";
-    }
-    std::cout << std::endl;
+template<typename T> void print_1d_vector(const std::vector<T> & vec)
+{
+  for (auto item : vec) {
+    std::cout << item << " ";
+  }
+  std::cout << std::endl;
 }
 
 double pt2pt_dis_sq(MatrixXd pt1, MatrixXd pt2);
 double pt2pt_dis(MatrixXd pt1, MatrixXd pt2);
 
-void reg(MatrixXd pts, MatrixXd& Y, double& sigma2, int M, double mu = 0, int max_iter = 50);
-void remove_row(MatrixXd& matrix, unsigned int rowToRemove);
+void reg(MatrixXd pts, MatrixXd & Y, double & sigma2, int M, double mu = 0, int max_iter = 50);
+void remove_row(MatrixXd & matrix, unsigned int rowToRemove);
 MatrixXd sort_pts(MatrixXd Y_0);
 
-std::vector<MatrixXd> line_sphere_intersection(MatrixXd point_A, MatrixXd point_B, MatrixXd sphere_center, double radius);
+std::vector<MatrixXd> line_sphere_intersection(
+  MatrixXd point_A, MatrixXd point_B,
+  MatrixXd sphere_center, double radius);
 
-visualization_msgs::msg::MarkerArray MatrixXd2MarkerArray(MatrixXd Y,
-                                                          std::string marker_frame,
-                                                          std::string marker_ns,
-                                                          std::vector<float> node_color,
-                                                          std::vector<float> line_color,
-                                                          double node_scale = 0.01,
-                                                          double line_scale = 0.005,
-                                                          std::vector<int> visible_nodes = {},
-                                                          std::vector<float> occluded_node_color = {},
-                                                          std::vector<float> occluded_line_color = {});
+visualization_msgs::msg::MarkerArray MatrixXd2MarkerArray(
+  MatrixXd Y,
+  std::string marker_frame,
+  std::string marker_ns,
+  std::vector<float> node_color,
+  std::vector<float> line_color,
+  double node_scale = 0.01,
+  double line_scale = 0.005,
+  std::vector<int> visible_nodes = {},
+  std::vector<float> occluded_node_color = {},
+  std::vector<float> occluded_line_color = {});
 
-visualization_msgs::msg::MarkerArray MatrixXd2MarkerArray(std::vector<MatrixXd> Y,
-                                                          std::string marker_frame,
-                                                          std::string marker_ns,
-                                                          std::vector<float> node_color,
-                                                          std::vector<float> line_color,
-                                                          double node_scale = 0.01,
-                                                          double line_scale = 0.005,
-                                                          std::vector<int> visible_nodes = {},
-                                                          std::vector<float> occluded_node_color = {},
-                                                          std::vector<float> occluded_line_color = {});
+visualization_msgs::msg::MarkerArray MatrixXd2MarkerArray(
+  std::vector<MatrixXd> Y,
+  std::string marker_frame,
+  std::string marker_ns,
+  std::vector<float> node_color,
+  std::vector<float> line_color,
+  double node_scale = 0.01,
+  double line_scale = 0.005,
+  std::vector<int> visible_nodes = {},
+  std::vector<float> occluded_node_color = {},
+  std::vector<float> occluded_line_color = {});
 
 MatrixXd cross_product(MatrixXd vec1, MatrixXd vec2);
 double dot_product(MatrixXd vec1, MatrixXd vec2);

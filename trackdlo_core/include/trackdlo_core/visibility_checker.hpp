@@ -1,5 +1,8 @@
 // Copyright 2026 Hayato Shimada
-// SPDX-License-Identifier: BSD-3-Clause
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 #ifndef TRACKDLO_CORE__VISIBILITY_CHECKER_HPP_
 #define TRACKDLO_CORE__VISIBILITY_CHECKER_HPP_
 
@@ -7,25 +10,28 @@
 #include <Eigen/Dense>
 #include <vector>
 
-namespace trackdlo_core {
+namespace trackdlo_core
+{
 
-struct VisibilityResult {
-    std::vector<int> visible_nodes;           // Nodes well within visibility threshold and not occluded
-    std::vector<int> not_self_occluded_nodes; // Nodes that are not self-occluded (used for visualization)
+struct VisibilityResult
+{
+  std::vector<int> visible_nodes;             // Nodes well within visibility threshold and not occluded
+  std::vector<int> not_self_occluded_nodes;   // Nodes that are not self-occluded (used for visualization)
 };
 
-class VisibilityChecker {
+class VisibilityChecker
+{
 public:
-    VisibilityChecker() = default;
+  VisibilityChecker() = default;
 
-    // Checks properties like self-occlusion and visible nodes 
-    VisibilityResult check_visibility(
-        const Eigen::MatrixXd& Y,
-        const Eigen::MatrixXd& X,
-        const Eigen::MatrixXd& proj_matrix,
-        const cv::Mat& mask,
-        double visibility_threshold,
-        int dlo_pixel_width);
+  // Checks properties like self-occlusion and visible nodes
+  VisibilityResult check_visibility(
+    const Eigen::MatrixXd & Y,
+    const Eigen::MatrixXd & X,
+    const Eigen::MatrixXd & proj_matrix,
+    const cv::Mat & mask,
+    double visibility_threshold,
+    int dlo_pixel_width);
 
 };
 
