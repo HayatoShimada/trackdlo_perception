@@ -46,26 +46,3 @@ services:
         source install/setup.bash &&
         ros2 launch trackdlo_bringup trackdlo.launch.py segmentation:=$${SEGMENTATION:-hsv}
       "
-
-  # SAM2 segmentation (separate container, optional)
-  trackdlo-sam2:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.sam2
-      args:
-        ROS_DISTRO: ${ROS_DISTRO:-humble}
-        BASE_IMAGE: trackdlo_ros2-base:latest
-        SAM2_DEVICE: cpu
-    image: trackdlo_ros2-sam2:latest
-    container_name: trackdlo-sam2
-    network_mode: host
-    env_file: .env
-    environment:
-      - DISPLAY=${DISPLAY}
-    volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - ${HOME}/.Xauthority:/root/.Xauthority:rw
-    depends_on:
-      trackdlo-base:
-        condition: service_completed_successfully
-    profiles: ["sam2"]

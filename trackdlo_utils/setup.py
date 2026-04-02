@@ -20,14 +20,10 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'simulate_occlusion = trackdlo_utils.simulate_occlusion:main',
-            'simulate_occlusion_eval = trackdlo_utils.simulate_occlusion_eval:main',
             'tracking_test = trackdlo_utils.tracking_test:main',
             'collect_pointcloud = trackdlo_utils.collect_pointcloud:main',
             'mask_node = trackdlo_utils.mask:main',
             'tracking_result_img = trackdlo_utils.tracking_result_img_from_pointcloud_topic:main',
-            'depth_format_converter = trackdlo_utils.depth_format_converter:main',
-            'sam2_segmentation = trackdlo_utils.sam2_segmentation_node:main',
             'composite_view = trackdlo_utils.composite_view_node:main',
             'param_tuner = trackdlo_utils.param_tuner_node:main',
         ],

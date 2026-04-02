@@ -90,16 +90,6 @@ def _launch_setup(context, *args, **kwargs):
             condition=LaunchConfigurationEquals('segmentation', 'hsv_tuner'),
         ),
 
-        # --- SAM2 Segmentation (only when segmentation:=sam2) ---
-        Node(
-            package='trackdlo_utils',
-            executable='sam2_segmentation',
-            name='sam2_segmentation',
-            output='screen',
-            parameters=[params_file],
-            condition=LaunchConfigurationEquals('segmentation', 'sam2'),
-        ),
-
         # --- Composite View (4-panel display) ---
         Node(
             package='trackdlo_utils',
@@ -134,8 +124,8 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'segmentation', default_value='hsv',
-            description='Segmentation method: hsv (built-in), hsv_tuner (GUI), sam2',
-            choices=['hsv', 'hsv_tuner', 'sam2'],
+            description='Segmentation method: hsv (built-in), hsv_tuner (GUI)',
+            choices=['hsv', 'hsv_tuner'],
         ),
         DeclareLaunchArgument(
             'rviz', default_value='true',
