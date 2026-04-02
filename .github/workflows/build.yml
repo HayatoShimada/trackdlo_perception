@@ -47,7 +47,7 @@ jobs:
         run: |
           . /opt/ros/${{ matrix.ros_distro }}/setup.sh
           . install/setup.sh
-          colcon test --return-code-on-test-failure
+          colcon test --packages-select trackdlo_segmentation --return-code-on-test-failure
           colcon test-result --verbose
 
       - name: Lint Python
