@@ -1,0 +1,129 @@
+name: Build and Publish Debian Packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-deb:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ros_distro: [humble]
+    container:
+      image: ros:${{ matrix.ros_distro }}-ros-base
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          apt-get install -y python3-pip python3-colcon-common-extensions \
+            dpkg-dev fakeroot debhelper dh-python \
+            python3-bloom python3-rosdep
+          rosdep update --rosdistro ${{ matrix.ros_distro }}
+          rosdep install --from-paths . --ignore-src -y --rosdistro ${{ matrix.ros_distro }}
+
+      - name: Build workspace
+        run: |
+          . /opt/ros/${{ matrix.ros_distro }}/setup.sh
+          colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=OFF
+
+      - name: Generate debian packages
+        run: |
+          . /opt/ros/${{ matrix.ros_distro }}/setup.sh
+          VERSION=${GITHUB_REF_NAME#v}
+          mkdir -p /tmp/debs
+
+          for pkg_dir in trackdlo_core trackdlo_segmentation trackdlo_msgs trackdlo_bringup trackdlo_utils; do
+            if [ ! -f "$pkg_dir/package.xml" ]; then
+              echo "Skipping $pkg_dir (no package.xml)"
+              continue
+            fi
+
+            echo "=== Building debian for $pkg_dir ==="
+            cd $GITHUB_WORKSPACE/$pkg_dir
+
+            # Generate debian files using bloom
+            bloom-generate rosdebian --os-name ubuntu --os-version jammy \
+              --ros-distro ${{ matrix.ros_distro }} || true
+
+            if [ -d "debian" ]; then
+              # Build debian package
+              DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -uc -us 2>&1 || true
+            fi
+
+            cd $GITHUB_WORKSPACE
+          done
+
+          # Collect all .deb files
+          find / -maxdepth 1 -name "*.deb" -exec mv {} /tmp/debs/ \; 2>/dev/null || true
+          find $GITHUB_WORKSPACE -maxdepth 1 -name "*.deb" -exec mv {} /tmp/debs/ \; 2>/dev/null || true
+          ls -la /tmp/debs/
+
+      - name: Upload deb artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: debs-${{ matrix.ros_distro }}
+          path: /tmp/debs/*.deb
+          if-no-files-found: warn
+
+  publish:
+    needs: build-deb
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          fetch-depth: 0
+        continue-on-error: true
+
+      - name: Initialize gh-pages if needed
+        run: |
+          if [ ! -f "index.html" ]; then
+            git checkout --orphan gh-pages || true
+            git rm -rf . 2>/dev/null || true
+            echo "<html><body><h1>trackdlo_perception apt repository</h1></body></html>" > index.html
+            mkdir -p humble
+          fi
+
+      - name: Download deb artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: debs-humble
+          path: humble/
+
+      - name: Generate apt repository metadata
+        run: |
+          cd humble
+          apt-get update && apt-get install -y apt-utils 2>/dev/null || sudo apt-get install -y apt-utils
+          dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
+          dpkg-scanpackages . /dev/null > Packages
+          cat > Release << EOF
+          Origin: trackdlo_perception
+          Label: trackdlo_perception
+          Suite: humble
+          Codename: humble
+          Architectures: amd64
+          Components: main
+          Description: trackdlo_perception ROS2 packages
+          EOF
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Update apt repository for ${GITHUB_REF_NAME}" || true
+          git push origin gh-pages || true
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: humble/*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

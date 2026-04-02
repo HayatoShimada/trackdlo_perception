@@ -26,6 +26,28 @@ trackdlo_perception/
 └── docker/                  Docker Compose + GPU configuration
 ```
 
+## Installation
+
+### From apt (ROS2 Humble)
+
+```bash
+echo "deb [trusted=yes] https://hayatoshimada.github.io/trackdlo_perception/humble /" \
+  | sudo tee /etc/apt/sources.list.d/trackdlo.list
+sudo apt update
+sudo apt install ros-humble-trackdlo-core ros-humble-trackdlo-segmentation
+```
+
+### From Source
+
+```bash
+cd ~/ros2_ws/src
+git clone https://github.com/HayatoShimada/trackdlo_perception.git
+cd ~/ros2_ws
+rosdep install --from-paths src --ignore-src -y
+colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release
+source install/setup.bash
+```
+
 ## Quick Start
 
 ### Docker Build
