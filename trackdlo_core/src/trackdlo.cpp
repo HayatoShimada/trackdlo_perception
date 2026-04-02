@@ -947,8 +947,9 @@ void trackdlo::tracking_step(
       int offset = i - (Y_.rows() - static_cast<int>(priors_vec_2.size()));
       if (i < priors_vec_2[0](0, 0) && i < static_cast<int>(priors_vec_1.size())) {
         correspondence_priors_.push_back(priors_vec_1[i]);
-      } else if (i > last_prior_idx &&
-        offset < static_cast<int>(priors_vec_2.size())) {
+      } else if (i > last_prior_idx &&  // NOLINT(readability/braces)
+        offset < static_cast<int>(priors_vec_2.size()))
+      {
         correspondence_priors_.push_back(priors_vec_2[i - (Y_.rows() - priors_vec_2.size())]);
       } else {
         correspondence_priors_.push_back(
@@ -956,8 +957,9 @@ void trackdlo::tracking_step(
           priors_vec_2[i - (Y_.rows() - priors_vec_2.size())]) / 2.0);
       }
     }
-  } else if (visible_nodes_extended[0] == 0 &&
-    visible_nodes_extended.back() == Y_.rows() - 1) {
+  } else if (visible_nodes_extended[0] == 0 &&  // NOLINT(readability/braces)
+    visible_nodes_extended.back() == Y_.rows() - 1)
+  {
     RCLCPP_INFO(rclcpp::get_logger("trackdlo"), "Mid-section occluded");
 
     correspondence_priors_ = traverse_euclidean(

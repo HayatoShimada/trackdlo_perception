@@ -554,10 +554,11 @@ def extract_connected_skeleton(
 
 # original post: https://stackoverflow.com/a/59204638
 def rotation_matrix_from_vectors(vec1, vec2):
-    """Find the rotation matrix that aligns vec1 to vec2.
+    """
+    Find the rotation matrix that aligns vec1 to vec2.
 
-    :param vec1: A 3d "source" vector
-    :param vec2: A 3d "destination" vector
+    :param vec1: A 3d 'source' vector
+    :param vec2: A 3d 'destination' vector
     :return mat: A transform matrix (3x3) which when
         applied to vec1, aligns it with vec2.
     """
