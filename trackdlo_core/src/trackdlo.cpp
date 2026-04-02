@@ -258,7 +258,6 @@ bool trackdlo::cpd_lle(
   }
 
   for (int it = 0; it < max_iter; it++) {
-
     std::map<int, double> shortest_node_pt_dists;
     for (int m = 0; m < M; m++) {
       double shortest_dist = 10000;
@@ -287,7 +286,6 @@ bool trackdlo::cpd_lle(
     MatrixXd pts_dis_sq_geodesic = MatrixXd::Zero(M, N);
 
     for (int i = 0; i < N; i++) {
-
       P.col(i).maxCoeff(&max_p_nodes[i]);
       int max_p_node = max_p_nodes[i];
 
@@ -611,37 +609,37 @@ std::vector<MatrixXd> trackdlo::traverse_euclidean(
           guide_nodes.row(
             i), guide_nodes.row(i + 1), cur_center, look_ahead_dist);
 
-        if (intersections.size() == 0) {
+        if (intersections.empty()) {
           continue;
-        } else if (intersections.size() == 1 &&
+        }
+        if (intersections.size() == 1 &&
           pt2pt_dis(
             intersections[0],
             guide_nodes.row(i + 1)) > pt2pt_dis(cur_center, guide_nodes.row(i + 1)))
         {
           continue;
-        } else {
-          found_intersection = true;
-          last_found_index = i;
-
-          if (intersections.size() == 2) {
-            if (pt2pt_dis(
-                intersections[0],
-                guide_nodes.row(i + 1)) <= pt2pt_dis(intersections[1], guide_nodes.row(i + 1)))
-            {
-              intersection =
-              {intersections[0](0, 0), intersections[0](0, 1), intersections[0](0, 2)};
-              cur_center = intersections[0];
-            } else {
-              intersection =
-              {intersections[1](0, 0), intersections[1](0, 1), intersections[1](0, 2)};
-              cur_center = intersections[1];
-            }
-          } else {
-            intersection = {intersections[0](0, 0), intersections[0](0, 1), intersections[0](0, 2)};
-            cur_center = intersections[0];
-          }
-          break;
         }
+        found_intersection = true;
+        last_found_index = i;
+
+        if (intersections.size() == 2) {
+          if (pt2pt_dis(
+              intersections[0],
+              guide_nodes.row(i + 1)) <= pt2pt_dis(intersections[1], guide_nodes.row(i + 1)))
+          {
+            intersection =
+            {intersections[0](0, 0), intersections[0](0, 1), intersections[0](0, 2)};
+            cur_center = intersections[0];
+          } else {
+            intersection =
+            {intersections[1](0, 0), intersections[1](0, 1), intersections[1](0, 2)};
+            cur_center = intersections[1];
+          }
+        } else {
+          intersection = {intersections[0](0, 0), intersections[0](0, 1), intersections[0](0, 2)};
+          cur_center = intersections[0];
+        }
+        break;
       }
 
       if (!found_intersection) {
@@ -680,7 +678,6 @@ std::vector<MatrixXd> trackdlo::traverse_euclidean(
       static_cast<int>(guide_nodes.rows() - consecutive_visible_nodes.size()) &&
       seg_dist_it - 1 >= 0)
     {
-
       double look_ahead_dist = fabs(geodesic_coord[seg_dist_it] - geodesic_coord[seg_dist_it - 1]);
 
       bool found_intersection = false;
@@ -693,37 +690,37 @@ std::vector<MatrixXd> trackdlo::traverse_euclidean(
           guide_nodes.row(
             i), guide_nodes.row(i - 1), cur_center, look_ahead_dist);
 
-        if (intersections.size() == 0) {
+        if (intersections.empty()) {
           continue;
-        } else if (intersections.size() == 1 &&
+        }
+        if (intersections.size() == 1 &&
           pt2pt_dis(
             intersections[0],
             guide_nodes.row(i - 1)) > pt2pt_dis(cur_center, guide_nodes.row(i - 1)))
         {
           continue;
-        } else {
-          found_intersection = true;
-          last_found_index = i;
-
-          if (intersections.size() == 2) {
-            if (pt2pt_dis(
-                intersections[0],
-                guide_nodes.row(i - 1)) <= pt2pt_dis(intersections[1], guide_nodes.row(i - 1)))
-            {
-              intersection =
-              {intersections[0](0, 0), intersections[0](0, 1), intersections[0](0, 2)};
-              cur_center = intersections[0];
-            } else {
-              intersection =
-              {intersections[1](0, 0), intersections[1](0, 1), intersections[1](0, 2)};
-              cur_center = intersections[1];
-            }
-          } else {
-            intersection = {intersections[0](0, 0), intersections[0](0, 1), intersections[0](0, 2)};
-            cur_center = intersections[0];
-          }
-          break;
         }
+        found_intersection = true;
+        last_found_index = i;
+
+        if (intersections.size() == 2) {
+          if (pt2pt_dis(
+              intersections[0],
+              guide_nodes.row(i - 1)) <= pt2pt_dis(intersections[1], guide_nodes.row(i - 1)))
+          {
+            intersection =
+            {intersections[0](0, 0), intersections[0](0, 1), intersections[0](0, 2)};
+            cur_center = intersections[0];
+          } else {
+            intersection =
+            {intersections[1](0, 0), intersections[1](0, 1), intersections[1](0, 2)};
+            cur_center = intersections[1];
+          }
+        } else {
+          intersection = {intersections[0](0, 0), intersections[0](0, 1), intersections[0](0, 2)};
+          cur_center = intersections[0];
+        }
+        break;
       }
 
       if (!found_intersection) {
@@ -774,37 +771,37 @@ std::vector<MatrixXd> trackdlo::traverse_euclidean(
           guide_nodes.row(
             i), guide_nodes.row(i + 1), cur_center, look_ahead_dist);
 
-        if (intersections.size() == 0) {
+        if (intersections.empty()) {
           continue;
-        } else if (intersections.size() == 1 &&
+        }
+        if (intersections.size() == 1 &&
           pt2pt_dis(
             intersections[0],
             guide_nodes.row(i + 1)) > pt2pt_dis(cur_center, guide_nodes.row(i + 1)))
         {
           continue;
-        } else {
-          found_intersection = true;
-          last_found_index = i;
-
-          if (intersections.size() == 2) {
-            if (pt2pt_dis(
-                intersections[0],
-                guide_nodes.row(i + 1)) <= pt2pt_dis(intersections[1], guide_nodes.row(i + 1)))
-            {
-              intersection =
-              {intersections[0](0, 0), intersections[0](0, 1), intersections[0](0, 2)};
-              cur_center = intersections[0];
-            } else {
-              intersection =
-              {intersections[1](0, 0), intersections[1](0, 1), intersections[1](0, 2)};
-              cur_center = intersections[1];
-            }
-          } else {
-            intersection = {intersections[0](0, 0), intersections[0](0, 1), intersections[0](0, 2)};
-            cur_center = intersections[0];
-          }
-          break;
         }
+        found_intersection = true;
+        last_found_index = i;
+
+        if (intersections.size() == 2) {
+          if (pt2pt_dis(
+              intersections[0],
+              guide_nodes.row(i + 1)) <= pt2pt_dis(intersections[1], guide_nodes.row(i + 1)))
+          {
+            intersection =
+            {intersections[0](0, 0), intersections[0](0, 1), intersections[0](0, 2)};
+            cur_center = intersections[0];
+          } else {
+            intersection =
+            {intersections[1](0, 0), intersections[1](0, 1), intersections[1](0, 2)};
+            cur_center = intersections[1];
+          }
+        } else {
+          intersection = {intersections[0](0, 0), intersections[0](0, 1), intersections[0](0, 2)};
+          cur_center = intersections[0];
+        }
+        break;
       }
 
       if (!found_intersection) {
@@ -848,37 +845,37 @@ std::vector<MatrixXd> trackdlo::traverse_euclidean(
           guide_nodes.row(
             i), guide_nodes.row(i - 1), cur_center, look_ahead_dist);
 
-        if (intersections.size() == 0) {
+        if (intersections.empty()) {
           continue;
-        } else if (intersections.size() == 1 &&
+        }
+        if (intersections.size() == 1 &&
           pt2pt_dis(
             intersections[0],
             guide_nodes.row(i - 1)) > pt2pt_dis(cur_center, guide_nodes.row(i - 1)))
         {
           continue;
-        } else {
-          found_intersection = true;
-          last_found_index = i;
-
-          if (intersections.size() == 2) {
-            if (pt2pt_dis(
-                intersections[0],
-                guide_nodes.row(i - 1)) <= pt2pt_dis(intersections[1], guide_nodes.row(i - 1)))
-            {
-              intersection =
-              {intersections[0](0, 0), intersections[0](0, 1), intersections[0](0, 2)};
-              cur_center = intersections[0];
-            } else {
-              intersection =
-              {intersections[1](0, 0), intersections[1](0, 1), intersections[1](0, 2)};
-              cur_center = intersections[1];
-            }
-          } else {
-            intersection = {intersections[0](0, 0), intersections[0](0, 1), intersections[0](0, 2)};
-            cur_center = intersections[0];
-          }
-          break;
         }
+        found_intersection = true;
+        last_found_index = i;
+
+        if (intersections.size() == 2) {
+          if (pt2pt_dis(
+              intersections[0],
+              guide_nodes.row(i - 1)) <= pt2pt_dis(intersections[1], guide_nodes.row(i - 1)))
+          {
+            intersection =
+            {intersections[0](0, 0), intersections[0](0, 1), intersections[0](0, 2)};
+            cur_center = intersections[0];
+          } else {
+            intersection =
+            {intersections[1](0, 0), intersections[1](0, 1), intersections[1](0, 2)};
+            cur_center = intersections[1];
+          }
+        } else {
+          intersection = {intersections[0](0, 0), intersections[0](0, 1), intersections[0](0, 2)};
+          cur_center = intersections[0];
+        }
+        break;
       }
 
       if (!found_intersection) {
@@ -907,7 +904,6 @@ void trackdlo::tracking_step(
   int img_rows,
   int img_cols)
 {
-
   correspondence_priors_ = {};
   int state = 0;
   (void)state;
@@ -946,14 +942,13 @@ void trackdlo::tracking_step(
 
     correspondence_priors_ = {};
     for (int i = 0; i < Y_.rows(); i++) {
+      int last_prior_idx =
+        static_cast<int>(priors_vec_1[priors_vec_1.size() - 1](0, 0));
+      int offset = i - (Y_.rows() - static_cast<int>(priors_vec_2.size()));
       if (i < priors_vec_2[0](0, 0) && i < static_cast<int>(priors_vec_1.size())) {
         correspondence_priors_.push_back(priors_vec_1[i]);
-      } else if (i >
-        priors_vec_1[priors_vec_1.size() - 1](0,
-        0) &&
-        (i - (Y_.rows() - static_cast<int>(priors_vec_2.size()))) <
-        static_cast<int>(priors_vec_2.size()))
-      {
+      } else if (i > last_prior_idx &&
+        offset < static_cast<int>(priors_vec_2.size())) {
         correspondence_priors_.push_back(priors_vec_2[i - (Y_.rows() - priors_vec_2.size())]);
       } else {
         correspondence_priors_.push_back(
@@ -962,8 +957,7 @@ void trackdlo::tracking_step(
       }
     }
   } else if (visible_nodes_extended[0] == 0 &&
-    visible_nodes_extended[visible_nodes_extended.size() - 1] == Y_.rows() - 1)
-  {
+    visible_nodes_extended.back() == Y_.rows() - 1) {
     RCLCPP_INFO(rclcpp::get_logger("trackdlo"), "Mid-section occluded");
 
     correspondence_priors_ = traverse_euclidean(

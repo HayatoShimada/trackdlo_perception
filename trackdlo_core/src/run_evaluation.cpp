@@ -210,7 +210,6 @@ private:
 
     double cur_error = -1;
     if (time_from_start > tracking_evaluator_.recording_start_time()) {
-
       if (bag_file_ != 3) {
         MatrixXd gt_nodes = tracking_evaluator_.get_ground_truth_nodes(cur_image_orig, cloud_xyz);
         MatrixXd Y_true = gt_nodes.replicate(1, 1);
@@ -456,7 +455,7 @@ private:
       if (bag_file_ == 0) {
         time_step = 1.0;
       }
-      if ((int)(diff / time_step) == tracking_evaluator_.image_counter() &&
+      if (static_cast<int>(diff / time_step) == tracking_evaluator_.image_counter() &&
         fabs(diff - (tracking_evaluator_.image_counter() * time_step)) <= 0.1)
       {
         std::string dir;

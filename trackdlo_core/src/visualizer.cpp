@@ -39,7 +39,6 @@ cv::Mat Visualizer::draw_tracking_image(
 
   // draw points
   for (int idx : indices_vec) {
-
     int x = static_cast<int>(image_coords(idx, 0) / image_coords(idx, 2));
     int y = static_cast<int>(image_coords(idx, 1) / image_coords(idx, 2));
 
@@ -84,4 +83,4 @@ cv::Mat Visualizer::draw_tracking_image(
   return tracking_img;
 }
 
-} // namespace trackdlo_core
+}  // namespace trackdlo_core

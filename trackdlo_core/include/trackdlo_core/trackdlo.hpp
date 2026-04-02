@@ -8,32 +8,14 @@
 #ifndef TRACKDLO_CORE__TRACKDLO_HPP_
 #define TRACKDLO_CORE__TRACKDLO_HPP_
 
-#include <Eigen/Dense>
 #include <Eigen/Core>
+#include <Eigen/Dense>
 #include <Eigen/Geometry>
-#include <vector>
-
-#include <rclcpp/rclcpp.hpp>
-#include <image_transport/image_transport.hpp>
-#if __has_include(<cv_bridge/cv_bridge.hpp>)
-#include <cv_bridge/cv_bridge.hpp>
-#else
-#include <cv_bridge/cv_bridge.h>
-#endif
-
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/features2d.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/core/cvstd.hpp>
-#include <opencv2/core/core.hpp>
-#include <opencv2/core/eigen.hpp>
-#include <opencv2/rgbd.hpp>
-
+#include <signal.h>
+#include <unistd.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
-
-#include <sensor_msgs/msg/point_cloud2.hpp>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
@@ -41,19 +23,33 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/radius_outlier_removal.h>
 #include <pcl/filters/conditional_removal.h>
+
+#include <algorithm>
+#include <chrono>
+#include <cstdlib>
+#include <ctime>
+#include <string>
+#include <thread>
+#include <vector>
+
+#include <opencv2/core/core.hpp>
+#include <opencv2/core/cvstd.hpp>
+#include <opencv2/core/eigen.hpp>
+#include <opencv2/features2d.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/rgbd.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <image_transport/image_transport.hpp>
+#if __has_include(<cv_bridge/cv_bridge.hpp>)
+#include <cv_bridge/cv_bridge.hpp>
+#else
+#include <cv_bridge/cv_bridge.h>
+#endif
+#include <sensor_msgs/msg/point_cloud2.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <std_msgs/msg/float64.hpp>
-
-#include <ctime>
-#include <chrono>
-#include <thread>
-#include <algorithm>
-#include <string>
-
-#include <unistd.h>
-#include <cstdlib>
-#include <signal.h>
 
 using Eigen::MatrixXd;
 using cv::Mat;
@@ -62,7 +58,7 @@ class trackdlo
 {
 public:
   trackdlo();
-  trackdlo(int num_of_nodes);
+  explicit trackdlo(int num_of_nodes);
   trackdlo(
     int num_of_nodes,
     double visibility_threshold,

@@ -8,6 +8,9 @@
 #ifndef TRACKDLO_CORE__UTILS_HPP_
 #define TRACKDLO_CORE__UTILS_HPP_
 
+#include <string>
+#include <vector>
+
 #include "trackdlo_core/trackdlo.hpp"
 
 using Eigen::MatrixXd;

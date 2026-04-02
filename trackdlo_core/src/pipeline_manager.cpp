@@ -223,4 +223,4 @@ PipelineResult PipelineManager::process(
   return result;
 }
 
-} // namespace trackdlo_core
+}  // namespace trackdlo_core

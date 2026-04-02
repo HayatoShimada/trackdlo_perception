@@ -122,4 +122,4 @@ VisibilityResult VisibilityChecker::check_visibility(
   return result;
 }
 
-} // namespace trackdlo_core
+}  // namespace trackdlo_core

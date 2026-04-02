@@ -6,9 +6,11 @@
 #ifndef TRACKDLO_CORE__VISUALIZER_HPP_
 #define TRACKDLO_CORE__VISUALIZER_HPP_
 
-#include <opencv2/opencv.hpp>
 #include <Eigen/Dense>
+
 #include <vector>
+
+#include <opencv2/opencv.hpp>
 
 namespace trackdlo_core
 {
@@ -37,6 +39,6 @@ public:
     const std::vector<int> & visible_nodes);
 };
 
-} // namespace trackdlo_core
+}  // namespace trackdlo_core
 
-#endif // TRACKDLO_CORE__VISUALIZER_HPP_
+#endif  // TRACKDLO_CORE__VISUALIZER_HPP_

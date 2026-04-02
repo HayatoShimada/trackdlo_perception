@@ -6,17 +6,19 @@
 #ifndef TRACKDLO_CORE__PIPELINE_MANAGER_HPP_
 #define TRACKDLO_CORE__PIPELINE_MANAGER_HPP_
 
+#include <Eigen/Dense>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+
+#include <memory>
+#include <vector>
+
+#include <opencv2/opencv.hpp>
+
 #include "trackdlo_core/trackdlo.hpp"
 #include "trackdlo_core/image_preprocessor.hpp"
 #include "trackdlo_core/visibility_checker.hpp"
 #include "trackdlo_core/visualizer.hpp"
-
-#include <opencv2/opencv.hpp>
-#include <Eigen/Dense>
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <vector>
-#include <memory>
 
 namespace trackdlo_core
 {
@@ -90,6 +92,6 @@ private:
   int zero_visible_count_ = 0;
 };
 
-} // namespace trackdlo_core
+}  // namespace trackdlo_core
 
-#endif // TRACKDLO_CORE__PIPELINE_MANAGER_HPP_
+#endif  // TRACKDLO_CORE__PIPELINE_MANAGER_HPP_

@@ -125,4 +125,4 @@ bool ImagePreprocessor::process(
   return true;
 }
 
-} // namespace trackdlo_core
+}  // namespace trackdlo_core

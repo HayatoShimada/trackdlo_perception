@@ -6,8 +6,9 @@
 #ifndef TRACKDLO_CORE__IMAGE_PREPROCESSOR_HPP_
 #define TRACKDLO_CORE__IMAGE_PREPROCESSOR_HPP_
 
-#include <opencv2/opencv.hpp>
 #include <vector>
+
+#include <opencv2/opencv.hpp>
 
 namespace trackdlo_core
 {
@@ -40,6 +41,6 @@ private:
   bool updated_opencv_mask_{false};
 };
 
-} // namespace trackdlo_core
+}  // namespace trackdlo_core
 
-#endif // TRACKDLO_CORE__IMAGE_PREPROCESSOR_HPP_
+#endif  // TRACKDLO_CORE__IMAGE_PREPROCESSOR_HPP_

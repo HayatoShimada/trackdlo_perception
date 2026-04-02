@@ -3,9 +3,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
-#include "trackdlo_core/trackdlo.hpp"
-#include "trackdlo_core/utils.hpp"
-#include "trackdlo_core/pipeline_manager.hpp"
+#include <message_filters/subscriber.h>
+#include <message_filters/synchronizer.h>
+#include <message_filters/sync_policies/approximate_time.h>
 
 #include <rclcpp/rclcpp.hpp>
 #include <rcl_interfaces/msg/set_parameters_result.hpp>
@@ -15,17 +15,16 @@
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <std_msgs/msg/header.hpp>
-
-#include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
-#include <message_filters/sync_policies/approximate_time.h>
-
 #include <image_transport/image_transport.hpp>
 #if __has_include(<cv_bridge/cv_bridge.hpp>)
 #include <cv_bridge/cv_bridge.hpp>
 #else
 #include <cv_bridge/cv_bridge.h>
 #endif
+
+#include "trackdlo_core/trackdlo.hpp"
+#include "trackdlo_core/utils.hpp"
+#include "trackdlo_core/pipeline_manager.hpp"
 
 using cv::Mat;
 using Eigen::MatrixXd;

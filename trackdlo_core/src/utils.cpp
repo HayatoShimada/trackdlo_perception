@@ -256,7 +256,6 @@ visualization_msgs::msg::MarkerArray MatrixXd2MarkerArray(
   std::vector<float> occluded_node_color,
   std::vector<float> occluded_line_color)
 {
-
   visualization_msgs::msg::MarkerArray results;
 
   bool last_node_visible = true;
@@ -363,7 +362,6 @@ visualization_msgs::msg::MarkerArray MatrixXd2MarkerArray(
   std::vector<float> occluded_node_color,
   std::vector<float> occluded_line_color)
 {
-
   visualization_msgs::msg::MarkerArray results;
 
   bool last_node_visible = true;
