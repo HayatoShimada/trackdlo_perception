@@ -1,3 +1,5 @@
+# Copyright 2026 Hayato Shimada
+# SPDX-License-Identifier: BSD-3-Clause
 import cv2
 import argparse
 import numpy as np

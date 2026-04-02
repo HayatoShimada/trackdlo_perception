@@ -1,3 +1,5 @@
+# Copyright 2026 Hayato Shimada
+# SPDX-License-Identifier: BSD-3-Clause
 from setuptools import find_packages, setup
 
 package_name = 'trackdlo_segmentation'

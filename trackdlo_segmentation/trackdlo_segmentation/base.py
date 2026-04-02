@@ -1,3 +1,5 @@
+# Copyright 2026 Hayato Shimada
+# SPDX-License-Identifier: BSD-3-Clause
 """Base class for all segmentation nodes in trackdlo_perception.
 
 All segmentation implementations (HSV, SAM2, YOLO, DeepLab, etc.)

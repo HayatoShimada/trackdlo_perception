@@ -1,3 +1,5 @@
+// Copyright 2026 Hayato Shimada
+// SPDX-License-Identifier: BSD-3-Clause
 #ifndef TRACKDLO_PERCEPTION_VISIBILITY_CHECKER_HPP
 #define TRACKDLO_PERCEPTION_VISIBILITY_CHECKER_HPP
 

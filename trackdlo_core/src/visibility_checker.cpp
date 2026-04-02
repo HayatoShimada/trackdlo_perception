@@ -1,3 +1,5 @@
+// Copyright 2026 Hayato Shimada
+// SPDX-License-Identifier: BSD-3-Clause
 #include "trackdlo_core/visibility_checker.hpp"
 #include <map>
 #include <algorithm>

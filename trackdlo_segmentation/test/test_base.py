@@ -1,3 +1,5 @@
+# Copyright 2026 Hayato Shimada
+# SPDX-License-Identifier: BSD-3-Clause
 """Tests for SegmentationNodeBase."""
 import numpy as np
 import pytest

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Copyright 2026 Hayato Shimada
+# SPDX-License-Identifier: BSD-3-Clause
+
 
 import rclpy
 from rclpy.node import Node

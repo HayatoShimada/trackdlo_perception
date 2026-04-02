@@ -1,3 +1,5 @@
+# Copyright 2026 Hayato Shimada
+# SPDX-License-Identifier: BSD-3-Clause
 """HSV segmentation node with interactive GUI tuner.
 
 Inherits from SegmentationNodeBase. Provides OpenCV trackbar GUI

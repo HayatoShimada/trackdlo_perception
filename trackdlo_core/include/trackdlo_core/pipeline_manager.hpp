@@ -1,3 +1,5 @@
+// Copyright 2026 Hayato Shimada
+// SPDX-License-Identifier: BSD-3-Clause
 #ifndef TRACKDLO_PIPELINE_MANAGER_HPP
 #define TRACKDLO_PIPELINE_MANAGER_HPP
 

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Copyright 2026 Hayato Shimada
+# SPDX-License-Identifier: BSD-3-Clause
+
 """CPD-LLE Parameter Tuner GUI Node.
 
 Opens an OpenCV window with trackbars to dynamically adjust

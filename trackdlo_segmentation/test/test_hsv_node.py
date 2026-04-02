@@ -1,3 +1,5 @@
+# Copyright 2026 Hayato Shimada
+# SPDX-License-Identifier: BSD-3-Clause
 """Tests for HSV segmentation node."""
 import numpy as np
 import pytest

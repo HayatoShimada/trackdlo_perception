@@ -1,3 +1,5 @@
+# Copyright 2026 Hayato Shimada
+# SPDX-License-Identifier: BSD-3-Clause
 from skimage.morphology import skeletonize
 from scipy.optimize import linear_sum_assignment
 import cv2

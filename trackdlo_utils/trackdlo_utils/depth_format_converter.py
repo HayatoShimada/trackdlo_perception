@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Copyright 2026 Hayato Shimada
+# SPDX-License-Identifier: BSD-3-Clause
+
 """Converts Gazebo float32 depth (meters) to uint16 depth (millimeters)
 for TrackDLO perception compatibility.
 Also corrects and republishes CameraInfo with proper intrinsics

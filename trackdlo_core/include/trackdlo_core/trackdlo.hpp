@@ -1,3 +1,5 @@
+// Copyright 2026 Hayato Shimada
+// SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
 #ifndef TRACKDLO_PERCEPTION__TRACKDLO_HPP_

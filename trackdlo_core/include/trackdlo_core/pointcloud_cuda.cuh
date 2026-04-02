@@ -1,3 +1,5 @@
+// Copyright 2026 Hayato Shimada
+// SPDX-License-Identifier: BSD-3-Clause
 #ifndef POINTCLOUD_CUDA_CUH
 #define POINTCLOUD_CUDA_CUH
 

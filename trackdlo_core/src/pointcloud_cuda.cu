@@ -1,3 +1,5 @@
+// Copyright 2026 Hayato Shimada
+// SPDX-License-Identifier: BSD-3-Clause
 #include "trackdlo_core/pointcloud_cuda.cuh"
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
