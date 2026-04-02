@@ -18,7 +18,7 @@ RUN mkdir -p /ros2_ws/src
 WORKDIR /ros2_ws
 
 # Copy packages
-COPY trackdlo_perception/ src/trackdlo_perception/
+COPY trackdlo_core/ src/trackdlo_core/
 COPY trackdlo_segmentation/ src/trackdlo_segmentation/
 COPY trackdlo_utils/ src/trackdlo_utils/
 COPY trackdlo_bringup/ src/trackdlo_bringup/

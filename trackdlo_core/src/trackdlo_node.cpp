@@ -1,6 +1,6 @@
-#include "trackdlo_perception/trackdlo.hpp"
-#include "trackdlo_perception/utils.hpp"
-#include "trackdlo_perception/pipeline_manager.hpp"
+#include "trackdlo_core/trackdlo.hpp"
+#include "trackdlo_core/utils.hpp"
+#include "trackdlo_core/pipeline_manager.hpp"
 
 #include <rclcpp/rclcpp.hpp>
 #include <rcl_interfaces/msg/set_parameters_result.hpp>
@@ -121,7 +121,7 @@ public:
             }
         }
 
-        pipeline_manager_ = std::make_unique<trackdlo_perception::PipelineManager>(use_external_mask_, multi_color_dlo_, lower, upper);
+        pipeline_manager_ = std::make_unique<trackdlo_core::PipelineManager>(use_external_mask_, multi_color_dlo_, lower, upper);
         update_pipeline_parameters();
 
         proj_matrix_.setZero();
@@ -268,7 +268,7 @@ private:
     rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr param_callback_handle_;
 
     // ---------- Pipeline Manager ----------
-    std::unique_ptr<trackdlo_perception::PipelineManager> pipeline_manager_;
+    std::unique_ptr<trackdlo_core::PipelineManager> pipeline_manager_;
 
     // ---------- Tracker state ----------
     bool received_init_nodes_;
@@ -388,7 +388,7 @@ private:
         else {
             std::chrono::high_resolution_clock::time_point cur_time_cb = std::chrono::high_resolution_clock::now();
 
-            trackdlo_perception::PipelineResult result = pipeline_manager_->process(cur_image_orig, cur_depth, proj_matrix_);
+            trackdlo_core::PipelineResult result = pipeline_manager_->process(cur_image_orig, cur_depth, proj_matrix_);
 
             if (!result.success) {
                 if (result.request_reinit && !reinit_requested_) {

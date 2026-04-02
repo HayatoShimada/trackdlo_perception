@@ -1,14 +1,14 @@
-#include "trackdlo_perception/pipeline_manager.hpp"
+#include "trackdlo_core/pipeline_manager.hpp"
 #include <pcl/filters/voxel_grid.h>
 #include <iostream>
-#include "trackdlo_perception/pointcloud_cuda.cuh"
+#include "trackdlo_core/pointcloud_cuda.cuh"
 
-namespace trackdlo_perception {
+namespace trackdlo_core {
 
 PipelineManager::PipelineManager(bool use_external_mask, bool multi_color_dlo, const std::vector<int>& lower, const std::vector<int>& upper) {
-    preprocessor_ = std::make_unique<trackdlo_perception::ImagePreprocessor>(use_external_mask, multi_color_dlo, lower, upper);
-    visibility_checker_ = std::make_unique<trackdlo_perception::VisibilityChecker>();
-    visualizer_ = std::make_unique<trackdlo_perception::Visualizer>();
+    preprocessor_ = std::make_unique<trackdlo_core::ImagePreprocessor>(use_external_mask, multi_color_dlo, lower, upper);
+    visibility_checker_ = std::make_unique<trackdlo_core::VisibilityChecker>();
+    visualizer_ = std::make_unique<trackdlo_core::Visualizer>();
 }
 
 void PipelineManager::set_parameters(
@@ -77,7 +77,7 @@ PipelineResult PipelineManager::process(const cv::Mat& cur_image_orig, const cv:
     result.cur_image = cur_image;
 
     // Point cloud generation and downsampling on GPU
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr downsampled_ptr = trackdlo_perception::cuda::generate_downsampled_pointcloud(
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr downsampled_ptr = trackdlo_core::cuda::generate_downsampled_pointcloud(
         mask, depth_image, cur_image_orig, proj_matrix, downsample_leaf_size_);
     
     if (downsampled_ptr) {
@@ -87,7 +87,7 @@ PipelineResult PipelineManager::process(const cv::Mat& cur_image_orig, const cv:
     Eigen::MatrixXd X = result.cur_pc_downsampled.getMatrixXfMap().topRows(3).transpose().cast<double>();
 
     // Visibility mapping
-    trackdlo_perception::VisibilityResult vis_res = visibility_checker_->check_visibility(Y_, X, proj_matrix, mask, visibility_threshold_, dlo_pixel_width_);
+    trackdlo_core::VisibilityResult vis_res = visibility_checker_->check_visibility(Y_, X, proj_matrix, mask, visibility_threshold_, dlo_pixel_width_);
     std::vector<int> visible_nodes = vis_res.visible_nodes;
     result.not_self_occluded_nodes = vis_res.not_self_occluded_nodes;
 
@@ -156,4 +156,4 @@ PipelineResult PipelineManager::process(const cv::Mat& cur_image_orig, const cv:
     return result;
 }
 
-} // namespace trackdlo_perception
+} // namespace trackdlo_core

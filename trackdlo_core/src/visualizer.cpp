@@ -1,6 +1,6 @@
-#include "trackdlo_perception/visualizer.hpp"
+#include "trackdlo_core/visualizer.hpp"
 
-namespace trackdlo_perception {
+namespace trackdlo_core {
 
 cv::Mat Visualizer::draw_tracking_image(
     const cv::Mat& original_image, 
@@ -76,4 +76,4 @@ cv::Mat Visualizer::draw_tracking_image(
     return tracking_img;
 }
 
-} // namespace trackdlo_perception
+} // namespace trackdlo_core

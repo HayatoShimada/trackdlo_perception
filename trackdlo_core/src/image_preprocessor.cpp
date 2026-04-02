@@ -1,6 +1,6 @@
-#include "trackdlo_perception/image_preprocessor.hpp"
+#include "trackdlo_core/image_preprocessor.hpp"
 
-namespace trackdlo_perception {
+namespace trackdlo_core {
 
 ImagePreprocessor::ImagePreprocessor(bool use_external_mask, bool multi_color_dlo,
                                      const std::vector<int>& lower, const std::vector<int>& upper)
@@ -98,4 +98,4 @@ bool ImagePreprocessor::process(const cv::Mat& cur_image_orig, cv::Mat& out_mask
     return true;
 }
 
-} // namespace trackdlo_perception
+} // namespace trackdlo_core

@@ -5,7 +5,7 @@
 #include <Eigen/Dense>
 #include <vector>
 
-namespace trackdlo_perception {
+namespace trackdlo_core {
 
 class Visualizer {
 public:
@@ -30,6 +30,6 @@ public:
         const std::vector<int>& visible_nodes);
 };
 
-} // namespace trackdlo_perception
+} // namespace trackdlo_core
 
 #endif // TRACKDLO_VISUALIZER_HPP

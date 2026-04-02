@@ -1,8 +1,8 @@
-#include "trackdlo_perception/visibility_checker.hpp"
+#include "trackdlo_core/visibility_checker.hpp"
 #include <map>
 #include <algorithm>
 
-namespace trackdlo_perception {
+namespace trackdlo_core {
 
 VisibilityResult VisibilityChecker::check_visibility(
     const Eigen::MatrixXd& Y,
@@ -101,4 +101,4 @@ VisibilityResult VisibilityChecker::check_visibility(
     return result;
 }
 
-} // namespace trackdlo_perception
+} // namespace trackdlo_core

@@ -5,7 +5,7 @@
 #include <Eigen/Dense>
 #include <vector>
 
-namespace trackdlo_perception {
+namespace trackdlo_core {
 
 struct VisibilityResult {
     std::vector<int> visible_nodes;           // Nodes well within visibility threshold and not occluded
@@ -27,6 +27,6 @@ public:
 
 };
 
-} // namespace trackdlo_perception
+} // namespace trackdlo_core
 
 #endif // TRACKDLO_PERCEPTION_VISIBILITY_CHECKER_HPP

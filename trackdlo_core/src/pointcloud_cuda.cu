@@ -1,8 +1,8 @@
-#include "trackdlo_perception/pointcloud_cuda.cuh"
+#include "trackdlo_core/pointcloud_cuda.cuh"
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 
-namespace trackdlo_perception {
+namespace trackdlo_core {
 namespace cuda {
 
 struct CudaPoint {
@@ -333,4 +333,4 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr generate_downsampled_pointcloud(
 }
 
 } // namespace cuda
-} // namespace trackdlo_perception
+} // namespace trackdlo_core

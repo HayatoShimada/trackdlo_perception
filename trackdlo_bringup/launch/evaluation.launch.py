@@ -21,7 +21,7 @@ def generate_launch_description():
 
         # Evaluation C++ node
         Node(
-            package='trackdlo_perception',
+            package='trackdlo_core',
             executable='run_evaluation',
             name='evaluation',
             output='screen',

@@ -1,0 +1,4 @@
+#!/usr/bin/env python3
+
+from trackdlo_core.initialize import main
+main()

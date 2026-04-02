@@ -1,10 +1,10 @@
 #ifndef TRACKDLO_PIPELINE_MANAGER_HPP
 #define TRACKDLO_PIPELINE_MANAGER_HPP
 
-#include "trackdlo_perception/trackdlo.hpp"
-#include "trackdlo_perception/image_preprocessor.hpp"
-#include "trackdlo_perception/visibility_checker.hpp"
-#include "trackdlo_perception/visualizer.hpp"
+#include "trackdlo_core/trackdlo.hpp"
+#include "trackdlo_core/image_preprocessor.hpp"
+#include "trackdlo_core/visibility_checker.hpp"
+#include "trackdlo_core/visualizer.hpp"
 
 #include <opencv2/opencv.hpp>
 #include <Eigen/Dense>
@@ -13,7 +13,7 @@
 #include <vector>
 #include <memory>
 
-namespace trackdlo_perception {
+namespace trackdlo_core {
 
 struct PipelineResult {
     bool success;
@@ -58,9 +58,9 @@ public:
     bool is_initialized() const { return initialized_; }
 
 private:
-    std::unique_ptr<trackdlo_perception::ImagePreprocessor> preprocessor_;
-    std::unique_ptr<trackdlo_perception::VisibilityChecker> visibility_checker_;
-    std::unique_ptr<trackdlo_perception::Visualizer> visualizer_;
+    std::unique_ptr<trackdlo_core::ImagePreprocessor> preprocessor_;
+    std::unique_ptr<trackdlo_core::VisibilityChecker> visibility_checker_;
+    std::unique_ptr<trackdlo_core::Visualizer> visualizer_;
     trackdlo tracker_;
 
     bool initialized_ = false;
@@ -76,6 +76,6 @@ private:
     int zero_visible_count_ = 0;
 };
 
-} // namespace trackdlo_perception
+} // namespace trackdlo_core
 
 #endif // TRACKDLO_PIPELINE_MANAGER_HPP

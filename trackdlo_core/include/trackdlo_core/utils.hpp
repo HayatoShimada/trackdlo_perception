@@ -3,7 +3,7 @@
 #ifndef TRACKDLO_PERCEPTION__UTILS_HPP_
 #define TRACKDLO_PERCEPTION__UTILS_HPP_
 
-#include "trackdlo_perception/trackdlo.hpp"
+#include "trackdlo_core/trackdlo.hpp"
 
 using Eigen::MatrixXd;
 using cv::Mat;

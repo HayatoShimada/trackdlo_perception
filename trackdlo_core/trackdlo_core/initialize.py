@@ -18,7 +18,7 @@ import numpy as np
 from visualization_msgs.msg import MarkerArray
 from scipy import interpolate
 
-from trackdlo_perception.utils import extract_connected_skeleton, ndarray2MarkerArray
+from trackdlo_core.utils import extract_connected_skeleton, ndarray2MarkerArray
 
 
 class InitTrackerNode(Node):

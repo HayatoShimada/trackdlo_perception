@@ -11,10 +11,10 @@ trackdlo_ros2 is a ROS2 (Humble/Jazzy) system for real-time tracking of Deformab
 ### Native Build (ROS2 workspace)
 ```bash
 # Build all packages
-colcon build --packages-select trackdlo_msgs trackdlo_segmentation trackdlo_perception trackdlo_utils trackdlo_bringup --cmake-args -DCMAKE_BUILD_TYPE=Release
+colcon build --packages-select trackdlo_msgs trackdlo_segmentation trackdlo_core trackdlo_utils trackdlo_bringup --cmake-args -DCMAKE_BUILD_TYPE=Release
 
 # Build single package
-colcon build --packages-select trackdlo_perception --cmake-args -DCMAKE_BUILD_TYPE=Release
+colcon build --packages-select trackdlo_core --cmake-args -DCMAKE_BUILD_TYPE=Release
 
 # Source after build
 source install/setup.bash
@@ -49,10 +49,10 @@ ROS_DISTRO=jazzy bash build.sh
 ### Tests & Linting
 ```bash
 # Run tests
-colcon test --packages-select trackdlo_segmentation trackdlo_perception trackdlo_utils trackdlo_bringup --return-code-on-test-failure
+colcon test --packages-select trackdlo_segmentation trackdlo_core trackdlo_utils trackdlo_bringup --return-code-on-test-failure
 
 # Lint Python
-flake8 trackdlo_perception/trackdlo_perception/ trackdlo_utils/trackdlo_utils/ trackdlo_segmentation/trackdlo_segmentation/ --max-line-length=150 --ignore=E501,W503,E741
+flake8 trackdlo_core/trackdlo_core/ trackdlo_utils/trackdlo_utils/ trackdlo_segmentation/trackdlo_segmentation/ --max-line-length=150 --ignore=E501,W503,E741
 ```
 
 ### Launch Commands
@@ -81,21 +81,21 @@ ros2 launch trackdlo_bringup trackdlo.launch.py rviz:=false
 
 | Package | Language | Build | Role |
 |---------|----------|-------|------|
-| `trackdlo_perception` | C++17 + Python | ament_cmake | Core CPD-LLE tracking algorithm + initialization |
+| `trackdlo_core` | C++17 + Python | ament_cmake | Core CPD-LLE tracking algorithm + initialization |
 | `trackdlo_segmentation` | Python | ament_python | Pluggable segmentation interface (base class + HSV) |
 | `trackdlo_utils` | Python | ament_python | Composite view, SAM2 segmentation, param tuner, test tools |
 | `trackdlo_bringup` | Launch/Config | ament_cmake | Launch files, YAML params, RViz config |
 | `trackdlo_msgs` | ROS IDL | ament_cmake | Custom messages (reserved for future use) |
 
 ### Processing Pipeline
-1. **Initialization** (`trackdlo_perception/trackdlo_perception/initialize.py`): HSV threshold → skeleton extraction → spline fitting → equally-spaced 3D nodes → publishes once to `/trackdlo/init_nodes`
-2. **Per-frame tracking** (`trackdlo_perception/src/trackdlo_node.cpp` + `trackdlo.cpp`): RGB-D sync → segmentation mask → point cloud → voxel downsample → visibility estimation → CPD-LLE EM iterations → updated node positions
+1. **Initialization** (`trackdlo_core/trackdlo_core/initialize.py`): HSV threshold → skeleton extraction → spline fitting → equally-spaced 3D nodes → publishes once to `/trackdlo/init_nodes`
+2. **Per-frame tracking** (`trackdlo_core/src/trackdlo_node.cpp` + `trackdlo.cpp`): RGB-D sync → segmentation mask → point cloud → voxel downsample → visibility estimation → CPD-LLE EM iterations → updated node positions
 
 ### Key Source Files
-- `trackdlo_perception/src/trackdlo.cpp` — CPD-LLE algorithm core (cpd_lle method)
-- `trackdlo_perception/src/trackdlo_node.cpp` — ROS2 node: image sync, preprocessing, visibility detection
-- `trackdlo_perception/src/utils.cpp` — Projection, depth conversion, occlusion helpers
-- `trackdlo_perception/trackdlo_perception/initialize.py` — Initialization pipeline (InitTrackerNode)
+- `trackdlo_core/src/trackdlo.cpp` — CPD-LLE algorithm core (cpd_lle method)
+- `trackdlo_core/src/trackdlo_node.cpp` — ROS2 node: image sync, preprocessing, visibility detection
+- `trackdlo_core/src/utils.cpp` — Projection, depth conversion, occlusion helpers
+- `trackdlo_core/trackdlo_core/initialize.py` — Initialization pipeline (InitTrackerNode)
 - `trackdlo_segmentation/trackdlo_segmentation/base.py` — SegmentationNodeBase (pluggable interface)
 - `trackdlo_segmentation/trackdlo_segmentation/hsv_node.py` — HSV segmentation with GUI tuner
 - `trackdlo_bringup/config/realsense_params.yaml` — Tracking parameters

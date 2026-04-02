@@ -6,7 +6,7 @@
 #include <pcl/point_types.h>
 #include <Eigen/Dense>
 
-namespace trackdlo_perception {
+namespace trackdlo_core {
 namespace cuda {
 
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr generate_pointcloud(
@@ -23,6 +23,6 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr generate_downsampled_pointcloud(
     float leaf_size);
 
 } // namespace cuda
-} // namespace trackdlo_perception
+} // namespace trackdlo_core
 
 #endif // POINTCLOUD_CUDA_CUH

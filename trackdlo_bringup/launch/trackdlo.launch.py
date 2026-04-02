@@ -56,7 +56,7 @@ def _launch_setup(context, *args, **kwargs):
 
         # --- TrackDLO C++ tracking node ---
         Node(
-            package='trackdlo_perception',
+            package='trackdlo_core',
             executable='trackdlo',
             name='trackdlo',
             output='screen',
@@ -70,7 +70,7 @@ def _launch_setup(context, *args, **kwargs):
 
         # --- Python initialization node ---
         Node(
-            package='trackdlo_perception',
+            package='trackdlo_core',
             executable='init_tracker',
             name='init_tracker',
             output='screen',

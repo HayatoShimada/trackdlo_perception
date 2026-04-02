@@ -4,7 +4,7 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 
-namespace trackdlo_perception {
+namespace trackdlo_core {
 
 class ImagePreprocessor {
 public:
@@ -32,6 +32,6 @@ private:
     bool updated_opencv_mask_{false};
 };
 
-} // namespace trackdlo_perception
+} // namespace trackdlo_core
 
 #endif // TRACKDLO_PERCEPTION_IMAGE_PREPROCESSOR_HPP
