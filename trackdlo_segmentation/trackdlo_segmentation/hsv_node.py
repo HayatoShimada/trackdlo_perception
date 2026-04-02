@@ -24,7 +24,7 @@ class HsvSegmentationNode(SegmentationNodeBase):
 
         self.declare_parameter('hsv_threshold_upper_limit', '135 255 255')
         self.declare_parameter('hsv_threshold_lower_limit', '85 50 20')
-        self.declare_parameter('enable_gui', True)
+        self.declare_parameter('enable_gui', False)
 
         upper_str = self.get_parameter('hsv_threshold_upper_limit').value
         lower_str = self.get_parameter('hsv_threshold_lower_limit').value
