@@ -18,11 +18,6 @@ install(DIRECTORY rviz/
   DESTINATION share/${PROJECT_NAME}/rviz
 )
 
-# Install world files
-install(DIRECTORY worlds/
-  DESTINATION share/${PROJECT_NAME}/worlds
-)
-
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
