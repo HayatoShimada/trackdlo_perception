@@ -12,8 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ros_distro: [humble]
-        # jazzy: cv_bridge header path changed (.h → .hpp), needs compatibility work
+        ros_distro: [humble, jazzy]
     container:
       image: ros:${{ matrix.ros_distro }}-perception
     steps:
@@ -47,7 +46,7 @@ jobs:
         run: |
           . /opt/ros/${{ matrix.ros_distro }}/setup.sh
           . install/setup.sh
-          colcon test --packages-select trackdlo_segmentation --return-code-on-test-failure
+          colcon test --return-code-on-test-failure
           colcon test-result --verbose
 
       - name: Lint Python

@@ -16,7 +16,11 @@
 #include <message_filters/sync_policies/approximate_time.h>
 
 #include <image_transport/image_transport.hpp>
+#if __has_include(<cv_bridge/cv_bridge.hpp>)
+#include <cv_bridge/cv_bridge.hpp>
+#else
 #include <cv_bridge/cv_bridge.h>
+#endif
 
 using cv::Mat;
 using Eigen::MatrixXd;
