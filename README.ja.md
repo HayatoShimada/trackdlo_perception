@@ -73,31 +73,122 @@ ros2 launch trackdlo_bringup trackdlo.launch.py segmentation:=hsv_tuner
 ros2 launch trackdlo_bringup trackdlo.launch.py rviz:=false
 ```
 
+## インストール
+
+### apt からインストール (ROS2 Humble)
+
+```bash
+echo "deb [trusted=yes] https://hayatoshimada.github.io/trackdlo_perception/humble /" \
+  | sudo tee /etc/apt/sources.list.d/trackdlo.list
+sudo apt update
+sudo apt install ros-humble-trackdlo-core ros-humble-trackdlo-segmentation
+```
+
+### ソースからビルド
+
+```bash
+cd ~/ros2_ws/src
+git clone https://github.com/HayatoShimada/trackdlo_perception.git
+cd ~/ros2_ws
+rosdep install --from-paths src --ignore-src -y
+colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release
+source install/setup.bash
+```
+
+## 使い方
+
+### 1. RealSense カメラで起動
+
+Intel RealSense D415/D435/D455 を接続して実行:
+
+```bash
+# デフォルト HSV セグメンテーション
+ros2 launch trackdlo_bringup trackdlo.launch.py
+
+# HSV チューナー GUI (しきい値をインタラクティブに調整)
+ros2 launch trackdlo_bringup trackdlo.launch.py segmentation:=hsv_tuner
+
+# RViz なし
+ros2 launch trackdlo_bringup trackdlo.launch.py rviz:=false
+```
+
+4パネルプレビューウィンドウが自動で表示され、カメラ映像・セグメンテーションマスク・オーバーレイ・追跡結果を確認できます。
+
+### 2. 追跡結果を購読する
+
+自分の ROS2 ノードから DLO の追跡位置を購読:
+
+```python
+from sensor_msgs.msg import PointCloud2
+from sensor_msgs_py import point_cloud2
+
+class MyNode(Node):
+    def __init__(self):
+        super().__init__('my_node')
+        self.create_subscription(
+            PointCloud2, '/trackdlo/results_pc', self.on_tracking, 10)
+
+    def on_tracking(self, msg):
+        # 各点は追跡された DLO ノード (x, y, z カメラ座標系)
+        points = list(point_cloud2.read_points(msg, field_names=('x', 'y', 'z')))
+        # points[0] = 最初の端点, points[-1] = 最後の端点
+```
+
+### 3. 依存パッケージとして使用
+
+`package.xml` に追加:
+
+```xml
+<exec_depend>trackdlo_core</exec_depend>
+```
+
+### 公開トピック
+
+| トピック | 型 | 説明 |
+|---|---|---|
+| `/trackdlo/results_pc` | PointCloud2 | 追跡済み DLO ノード座標 (メイン出力) |
+| `/trackdlo/results_img` | Image | 追跡結果の可視化画像 |
+| `/trackdlo/segmentation_mask` | Image | セグメンテーションマスク (mono8) |
+| `/trackdlo/init_nodes` | PointCloud2 | 初期化ノード (1回のみ) |
+
+### 4. カスタムセグメンテーションの追加
+
+`SegmentationNodeBase` を継承して新しいセグメンテーション手法を追加:
+
+```python
+from trackdlo_segmentation import SegmentationNodeBase
+import numpy as np
+
+class YoloSegmentationNode(SegmentationNodeBase):
+    def __init__(self):
+        super().__init__('yolo_segmentation')
+        # モデルの初期化
+
+    def segment(self, cv_image: np.ndarray) -> np.ndarray:
+        # 入力: BGR 画像 (H, W, 3), dtype uint8
+        # 出力: バイナリマスク (H, W), dtype uint8, 値は 0 または 255
+        mask = your_model.predict(cv_image)
+        return mask
+```
+
+外部マスクモードで trackdlo と一緒に実行:
+
+```bash
+# ターミナル 1: 外部マスクモードで trackdlo を起動
+ros2 launch trackdlo_bringup trackdlo.launch.py segmentation:=hsv_tuner
+
+# ターミナル 2: 自作セグメンテーションノードを実行 (HSV を置き換え)
+ros2 run your_package yolo_segmentation
+```
+
+全セグメンテーションノードは `/trackdlo/segmentation_mask` (mono8) にパブリッシュします。
+
 ## セグメンテーションモード
 
 | モード | 説明 | ユースケース |
 |--------|------|-------------|
 | `hsv` (デフォルト) | HSV しきい値処理 | DLO の色が既知、パラメータ調整済み |
 | `hsv_tuner` | スライダー GUI でリアルタイム調整 | 新しい DLO の HSV 値を探す |
-
-### セグメンテーションの拡張
-
-`SegmentationNodeBase` を継承するだけで新しいセグメンテーション手法を追加できる:
-
-```python
-from trackdlo_segmentation import SegmentationNodeBase
-
-class MySegmentationNode(SegmentationNodeBase):
-    def __init__(self):
-        super().__init__('my_segmentation')
-
-    def segment(self, cv_image):
-        # cv_image: BGR (H, W, 3)
-        # return: binary mask (H, W), values 0 or 255
-        ...
-```
-
-全セグメンテーションノードは `/trackdlo/segmentation_mask` (mono8) にパブリッシュする。
 
 ## アーキテクチャ
 
@@ -141,12 +232,7 @@ trackdlo-core コンテナ
 
 ## 他の ROS2 プロジェクトとの連携
 
-trackdlo_perception は標準 ROS2 メッセージ型のみを使用。同じ `ROS_DOMAIN_ID` を設定するだけで他のコンテナから購読可能:
-
-```python
-# 他のプロジェクトから追跡結果を購読する例
-self.create_subscription(PointCloud2, '/trackdlo/results_pc', self.callback, 10)
-```
+trackdlo_perception は標準 ROS2 メッセージ型のみを使用。同じ `ROS_DOMAIN_ID` を設定するだけで他のコンテナから購読可能です。カスタムメッセージは不要です。
 
 ## 主要パラメータ
 
