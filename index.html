@@ -1,1 +1,405 @@
-<html><body><h1>trackdlo_perception apt repository</h1><p>Add to your sources: <code>deb [trusted=yes] https://hayatoshimada.github.io/trackdlo_perception/humble /</code></p></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>trackdlo_perception — Real-time DLO Tracking for ROS2</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-hover: #79c0ff;
+      --green: #3fb950;
+      --purple: #bc8cff;
+      --orange: #f0883e;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hover); text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+
+    /* Hero */
+    .hero {
+      padding: 80px 0 60px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero h1 { font-size: 2.5em; font-weight: 700; margin-bottom: 16px; }
+    .hero h1 span { color: var(--accent); }
+    .hero p { font-size: 1.2em; color: var(--text-muted); max-width: 600px; margin: 0 auto 32px; }
+    .hero-badges { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+    .badge-ros { background: #1a3a2a; color: var(--green); border: 1px solid #2a5a3a; }
+    .badge-license { background: #2a1a3a; color: var(--purple); border: 1px solid #3a2a5a; }
+    .badge-cuda { background: #3a2a1a; color: var(--orange); border: 1px solid #5a3a2a; }
+
+    /* Sections */
+    section { padding: 60px 0; border-bottom: 1px solid var(--border); }
+    section:last-child { border-bottom: none; }
+    h2 { font-size: 1.8em; margin-bottom: 24px; }
+    h3 { font-size: 1.2em; margin-bottom: 12px; color: var(--text-muted); }
+
+    /* Features grid */
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+    .feature {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+    }
+    .feature h3 { color: var(--accent); margin-bottom: 8px; }
+    .feature p { color: var(--text-muted); font-size: 0.95em; }
+
+    /* Code blocks */
+    pre {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      overflow-x: auto;
+      font-size: 0.9em;
+      margin: 16px 0;
+    }
+    code { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; }
+    .inline-code {
+      background: var(--surface);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    /* Packages table */
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { color: var(--text-muted); font-weight: 600; font-size: 0.85em; text-transform: uppercase; }
+
+    /* Pipeline diagram */
+    .pipeline {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      font-family: monospace;
+      white-space: pre;
+      overflow-x: auto;
+      font-size: 0.85em;
+      line-height: 1.8;
+    }
+
+    /* Topics */
+    .topic-name { color: var(--green); font-family: monospace; }
+    .topic-type { color: var(--text-muted); font-family: monospace; font-size: 0.9em; }
+
+    /* Buttons */
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 1em;
+      margin: 8px;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: var(--accent); color: var(--bg); }
+    .btn-primary:hover { background: var(--accent-hover); text-decoration: none; }
+    .btn-outline { border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { border-color: var(--accent); text-decoration: none; }
+
+    /* Footer */
+    footer {
+      padding: 40px 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9em;
+    }
+    footer a { color: var(--text-muted); }
+    footer a:hover { color: var(--accent); }
+
+    /* Tabs */
+    .install-tabs { display: flex; gap: 0; margin-bottom: 0; }
+    .tab {
+      padding: 10px 20px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-bottom: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 0.9em;
+      border-radius: 8px 8px 0 0;
+    }
+    .tab.active { background: var(--surface); color: var(--text); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .tab-content pre { margin-top: 0; border-radius: 0 8px 8px 8px; }
+  </style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="container">
+    <h1>trackdlo_<span>perception</span></h1>
+    <p>Real-time tracking of Deformable Linear Objects using ROS2 and Intel RealSense RGB-D cameras</p>
+    <div class="hero-badges">
+      <span class="badge badge-ros">ROS2 Humble / Jazzy</span>
+      <span class="badge badge-license">BSD-3-Clause</span>
+      <span class="badge badge-cuda">CUDA Optional</span>
+    </div>
+    <div style="margin-top: 32px;">
+      <a href="https://github.com/HayatoShimada/trackdlo_perception" class="btn btn-primary">GitHub Repository</a>
+      <a href="https://github.com/HayatoShimada/trackdlo_perception/releases" class="btn btn-outline">Releases</a>
+    </div>
+  </div>
+</div>
+
+<!-- Features -->
+<section>
+  <div class="container">
+    <h2>Features</h2>
+    <div class="features">
+      <div class="feature">
+        <h3>CPD-LLE Algorithm</h3>
+        <p>Coherent Point Drift with Locally Linear Embedding for robust, real-time deformable object tracking with occlusion handling.</p>
+      </div>
+      <div class="feature">
+        <h3>Pluggable Segmentation</h3>
+        <p>Swap segmentation backends (HSV, YOLO, DeepLab) by subclassing <code>SegmentationNodeBase</code>. New methods added without touching core code.</p>
+      </div>
+      <div class="feature">
+        <h3>4-Panel Preview</h3>
+        <p>Live composite view showing camera feed, segmentation mask, overlay, and tracking results simultaneously.</p>
+      </div>
+      <div class="feature">
+        <h3>GPU Acceleration</h3>
+        <p>Optional CUDA support for point cloud generation. Auto-detected at build time — falls back to CPU seamlessly.</p>
+      </div>
+      <div class="feature">
+        <h3>Docker Ready</h3>
+        <p>Single command launch with automatic NVIDIA GPU detection. No manual dependency installation needed.</p>
+      </div>
+      <div class="feature">
+        <h3>RealSense Support</h3>
+        <p>Works with Intel RealSense D415, D435, D455 series RGB-D cameras out of the box.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Packages -->
+<section>
+  <div class="container">
+    <h2>Packages</h2>
+    <table>
+      <thead>
+        <tr><th>Package</th><th>Language</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>trackdlo_core</code></td>
+          <td>C++17 / Python</td>
+          <td>CPD-LLE tracking algorithm, ROS2 node, and initialization pipeline</td>
+        </tr>
+        <tr>
+          <td><code>trackdlo_segmentation</code></td>
+          <td>Python</td>
+          <td>Pluggable segmentation interface (<code>SegmentationNodeBase</code>) + HSV implementation</td>
+        </tr>
+        <tr>
+          <td><code>trackdlo_msgs</code></td>
+          <td>ROS IDL</td>
+          <td>Custom message definitions (reserved for future use)</td>
+        </tr>
+        <tr>
+          <td><code>trackdlo_bringup</code></td>
+          <td>Launch / Config</td>
+          <td>Launch files, YAML parameters, RViz configuration</td>
+        </tr>
+        <tr>
+          <td><code>trackdlo_utils</code></td>
+          <td>Python</td>
+          <td>Composite view, parameter tuner, and debugging tools</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Installation -->
+<section>
+  <div class="container">
+    <h2>Installation</h2>
+
+    <div class="install-tabs">
+      <div class="tab active" onclick="switchTab('apt')">apt</div>
+      <div class="tab" onclick="switchTab('source')">Source</div>
+      <div class="tab" onclick="switchTab('docker')">Docker</div>
+    </div>
+
+    <div id="tab-apt" class="tab-content active">
+      <pre><code><span style="color:var(--text-muted)"># Add apt repository</span>
+echo "deb [trusted=yes] https://hayatoshimada.github.io/trackdlo_perception/humble /" \
+  | sudo tee /etc/apt/sources.list.d/trackdlo.list
+sudo apt update
+sudo apt install ros-humble-trackdlo-core ros-humble-trackdlo-segmentation</code></pre>
+    </div>
+
+    <div id="tab-source" class="tab-content">
+      <pre><code><span style="color:var(--text-muted)"># Clone and build</span>
+cd ~/ros2_ws/src
+git clone https://github.com/HayatoShimada/trackdlo_perception.git
+cd ~/ros2_ws
+rosdep install --from-paths src --ignore-src -y
+colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release
+source install/setup.bash</code></pre>
+    </div>
+
+    <div id="tab-docker" class="tab-content">
+      <pre><code><span style="color:var(--text-muted)"># Build and run</span>
+cd docker/
+bash build.sh
+xhost +local:docker
+./run.sh              <span style="color:var(--text-muted)"># HSV segmentation</span>
+./run.sh hsv_tuner    <span style="color:var(--text-muted)"># HSV with GUI tuner</span></code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- Pipeline -->
+<section>
+  <div class="container">
+    <h2>Processing Pipeline</h2>
+    <div class="pipeline">[RealSense D435/D415]
+    │
+    ├── /camera/color/image_raw
+    ├── /camera/aligned_depth_to_color/image_raw
+    │
+    ▼
+[Segmentation]  ← HSV / YOLO / DeepLab (swappable)
+    │
+    ▼ /trackdlo/segmentation_mask
+    │
+[trackdlo_node (CPD-LLE)]
+    │
+    ├── /trackdlo/results_pc      → tracked DLO node positions
+    ├── /trackdlo/results_img     → visualization overlay
+    │
+    ▼
+[composite_view]  ← 4-panel preview window</div>
+  </div>
+</section>
+
+<!-- Topics -->
+<section>
+  <div class="container">
+    <h2>ROS2 Topics</h2>
+    <table>
+      <thead>
+        <tr><th>Topic</th><th>Type</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="topic-name">/trackdlo/results_pc</td>
+          <td class="topic-type">PointCloud2</td>
+          <td>Tracked DLO node positions (main output)</td>
+        </tr>
+        <tr>
+          <td class="topic-name">/trackdlo/results_img</td>
+          <td class="topic-type">Image</td>
+          <td>Tracking result visualization</td>
+        </tr>
+        <tr>
+          <td class="topic-name">/trackdlo/segmentation_mask</td>
+          <td class="topic-type">Image</td>
+          <td>Segmentation mask (mono8)</td>
+        </tr>
+        <tr>
+          <td class="topic-name">/trackdlo/init_nodes</td>
+          <td class="topic-type">PointCloud2</td>
+          <td>Initial DLO nodes (published once)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top: 32px;">Subscribe from your project</h3>
+    <pre><code><span style="color:var(--purple)">from</span> sensor_msgs.msg <span style="color:var(--purple)">import</span> PointCloud2
+<span style="color:var(--purple)">from</span> sensor_msgs_py <span style="color:var(--purple)">import</span> point_cloud2
+
+<span style="color:var(--purple)">class</span> <span style="color:var(--orange)">MyNode</span>(Node):
+    <span style="color:var(--purple)">def</span> <span style="color:var(--accent)">__init__</span>(self):
+        super().__init__(<span style="color:var(--green)">'my_node'</span>)
+        self.create_subscription(
+            PointCloud2, <span style="color:var(--green)">'/trackdlo/results_pc'</span>, self.on_tracking, 10)
+
+    <span style="color:var(--purple)">def</span> <span style="color:var(--accent)">on_tracking</span>(self, msg):
+        points = list(point_cloud2.read_points(msg, field_names=(<span style="color:var(--green)">'x'</span>, <span style="color:var(--green)">'y'</span>, <span style="color:var(--green)">'z'</span>)))
+        <span style="color:var(--text-muted)"># points[0] = first endpoint, points[-1] = last endpoint</span></code></pre>
+  </div>
+</section>
+
+<!-- Custom Segmentation -->
+<section>
+  <div class="container">
+    <h2>Pluggable Segmentation</h2>
+    <p style="color: var(--text-muted); margin-bottom: 20px;">
+      Add new segmentation backends by subclassing <code class="inline-code">SegmentationNodeBase</code>.
+      All implementations publish to <code class="inline-code">/trackdlo/segmentation_mask</code> (mono8).
+    </p>
+    <pre><code><span style="color:var(--purple)">from</span> trackdlo_segmentation <span style="color:var(--purple)">import</span> SegmentationNodeBase
+<span style="color:var(--purple)">import</span> numpy <span style="color:var(--purple)">as</span> np
+
+<span style="color:var(--purple)">class</span> <span style="color:var(--orange)">YoloSegmentationNode</span>(SegmentationNodeBase):
+    <span style="color:var(--purple)">def</span> <span style="color:var(--accent)">__init__</span>(self):
+        super().__init__(<span style="color:var(--green)">'yolo_segmentation'</span>)
+        <span style="color:var(--text-muted)"># Initialize your model here</span>
+
+    <span style="color:var(--purple)">def</span> <span style="color:var(--accent)">segment</span>(self, cv_image: np.ndarray) -> np.ndarray:
+        <span style="color:var(--text-muted)"># Input:  BGR image (H, W, 3), dtype uint8</span>
+        <span style="color:var(--text-muted)"># Output: binary mask (H, W), dtype uint8, values 0 or 255</span>
+        mask = your_model.predict(cv_image)
+        <span style="color:var(--purple)">return</span> mask</code></pre>
+  </div>
+</section>
+
+<!-- Credits -->
+<footer>
+  <div class="container">
+    <p>
+      Based on <a href="https://github.com/RMDLO/trackdlo">TrackDLO</a> by RMDLO
+      &nbsp;·&nbsp;
+      Maintained by <a href="https://github.com/HayatoShimada">Hayato Shimada</a>
+      &nbsp;·&nbsp;
+      <a href="https://github.com/HayatoShimada/trackdlo_perception">GitHub</a>
+      &nbsp;·&nbsp;
+      <a href="https://github.com/HayatoShimada/trackdlo_perception/releases">Releases</a>
+    </p>
+    <p style="margin-top: 8px; font-size: 0.85em;">BSD-3-Clause License</p>
+  </div>
+</footer>
+
+<script>
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+</script>
+
+</body>
+</html>
