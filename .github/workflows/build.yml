@@ -21,10 +21,21 @@ jobs:
       - name: Install dependencies
         run: |
           apt-get update
-          apt-get install -y python3-pip python3-colcon-common-extensions
+          apt-get install -y python3-pip python3-colcon-common-extensions \
+            ros-${{ matrix.ros_distro }}-cv-bridge \
+            ros-${{ matrix.ros_distro }}-image-transport \
+            ros-${{ matrix.ros_distro }}-pcl-conversions \
+            ros-${{ matrix.ros_distro }}-pcl-ros \
+            ros-${{ matrix.ros_distro }}-message-filters \
+            ros-${{ matrix.ros_distro }}-tf2-ros \
+            ros-${{ matrix.ros_distro }}-tf2-geometry-msgs \
+            ros-${{ matrix.ros_distro }}-rosbag2-cpp \
+            ros-${{ matrix.ros_distro }}-sensor-msgs-py \
+            ros-${{ matrix.ros_distro }}-rmw-cyclonedds-cpp \
+            libpcl-dev libeigen3-dev libopencv-dev
           rosdep update --rosdistro ${{ matrix.ros_distro }}
           rosdep install --from-paths . --ignore-src -y --rosdistro ${{ matrix.ros_distro }} \
-            --skip-keys="ament_python"
+            --skip-keys="ament_python" || true
 
       - name: Build
         run: |
