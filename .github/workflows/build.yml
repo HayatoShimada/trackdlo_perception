@@ -1,0 +1,44 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ros_distro: [humble, jazzy]
+    container:
+      image: ros:${{ matrix.ros_distro }}-ros-base
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y python3-pip python3-colcon-common-extensions
+          rosdep update --rosdistro ${{ matrix.ros_distro }}
+          rosdep install --from-paths . --ignore-src -y --rosdistro ${{ matrix.ros_distro }}
+
+      - name: Build
+        run: |
+          . /opt/ros/${{ matrix.ros_distro }}/setup.sh
+          colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=OFF
+
+      - name: Test
+        run: |
+          . /opt/ros/${{ matrix.ros_distro }}/setup.sh
+          . install/setup.sh
+          colcon test --return-code-on-test-failure
+          colcon test-result --verbose
+
+      - name: Lint Python
+        run: |
+          pip3 install flake8
+          flake8 trackdlo_core/trackdlo_core/ trackdlo_utils/trackdlo_utils/ trackdlo_segmentation/trackdlo_segmentation/ \
+            --max-line-length=150 --ignore=E501,W503,E741
