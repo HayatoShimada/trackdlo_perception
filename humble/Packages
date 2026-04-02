@@ -5,10 +5,10 @@ Maintainer: Hayato Shimada <info@85-store.com>
 Installed-Size: 2085
 Depends: libc6 (>= 2.34), libgcc-s1 (>= 3.3.1), libopencv-core4.5d (>= 4.5.4+dfsg), libopencv-features2d4.5d (>= 4.5.4+dfsg), libopencv-flann4.5d (>= 4.5.4+dfsg), libopencv-imgcodecs4.5d (>= 4.5.4+dfsg), libopencv-imgproc4.5d (>= 4.5.4+dfsg), libopencv-stitching4.5d (>= 4.5.4+dfsg), libpcl-common1.12 (>= 1.12.1+dfsg), libpcl-filters1.12 (>= 1.12.1+dfsg), libstdc++6 (>= 11), ros-humble-ament-index-cpp, ros-humble-cv-bridge, ros-humble-image-transport, ros-humble-message-filters, ros-humble-pcl-conversions, ros-humble-pcl-ros, ros-humble-rclcpp, ros-humble-rclpy, ros-humble-rosbag2-cpp, ros-humble-sensor-msgs, ros-humble-sensor-msgs-py, ros-humble-std-msgs, ros-humble-tf2-ros, ros-humble-visualization-msgs
 Filename: ./ros-humble-trackdlo-core_2.0.0-0jammy_amd64.deb
-Size: 505064
-MD5sum: 3d0075a993b172e5c292cf2e8c5adbcc
-SHA1: 514cd1b86ea0209107749ae37cb9b7641a9c0dc9
-SHA256: 9f7e67d9586929c259dae6a8fce22a1ebf87109f632f93662c957229db8ee887
+Size: 505038
+MD5sum: c320716554333468188ad27ea3b56a2c
+SHA1: 843bf3eef6cfc952de28651a6739adc1b770e81d
+SHA256: f221765b8b736677a337d4b4ca947acbda7cd8aa83a8d8afab1c69797842ecaa
 Section: misc
 Priority: optional
 Description: TrackDLO2: Tracking Deformable Linear Objects - Core perception package (ROS2 Humble)
@@ -20,10 +20,10 @@ Maintainer: Hayato Shimada <info@85-store.com>
 Installed-Size: 41
 Depends: ros-humble-geometry-msgs, ros-humble-rosidl-default-runtime, ros-humble-std-msgs
 Filename: ./ros-humble-trackdlo-msgs_2.0.0-0jammy_amd64.deb
-Size: 5080
-MD5sum: 8386042a843320a0dedbd4493a3d84a3
-SHA1: fdcd87659155f246b1a2a353543fd9d052176212
-SHA256: 45cb3f2b81c15ec16114b4692828b342e324383fa4477df7b7941dc62ba154ba
+Size: 5070
+MD5sum: ca1d96c230f8674dddf462c2e3a8fab1
+SHA1: 2eb404d45c6c7e403226ba6dbc83c8a908088680
+SHA256: ec04a80c334969c0a82ae414668f845f389d7cb778a420e7667f975ceff07140
 Section: misc
 Priority: optional
 Description: TrackDLO2: Custom message definitions (reserved for future use)
