@@ -51,6 +51,6 @@ jobs:
 
       - name: Lint Python
         run: |
-          pip3 install flake8
+          pip3 install --break-system-packages flake8 || pip3 install flake8
           flake8 trackdlo_core/trackdlo_core/ trackdlo_utils/trackdlo_utils/ trackdlo_segmentation/trackdlo_segmentation/ \
             --max-line-length=150 --ignore=E501,W503,E741
