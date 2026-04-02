@@ -13,9 +13,9 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='TODO',
-    maintainer_email='todo@todo.com',
-    description='TrackDLO2: Utility scripts for testing, evaluation, and visualization',
+    maintainer='Hayato Shimada',
+    maintainer_email='info@85-store.com',
+    description='trackdlo_perception: Visualization and parameter tuning tools',
     license='BSD-3-Clause',
     tests_require=['pytest'],
     entry_points={

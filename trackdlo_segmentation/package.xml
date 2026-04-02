@@ -2,9 +2,9 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>trackdlo_segmentation</name>
-  <version>1.0.0</version>
-  <description>Pluggable segmentation interface for trackdlo_ros2</description>
-  <maintainer email="todo@todo.com">TODO</maintainer>
+  <version>2.0.0</version>
+  <description>Pluggable segmentation interface for trackdlo_perception</description>
+  <maintainer email="info@85-store.com">Hayato Shimada</maintainer>
   <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_python</buildtool_depend>

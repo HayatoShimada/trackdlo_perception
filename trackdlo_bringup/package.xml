@@ -3,8 +3,8 @@
 <package format="3">
   <name>trackdlo_bringup</name>
   <version>2.0.0</version>
-  <description>trackdlo_ros2: Launch files, configuration, and bringup</description>
-  <maintainer email="todo@todo.com">TODO</maintainer>
+  <description>trackdlo_perception: Launch files, configuration, and bringup</description>
+  <maintainer email="info@85-store.com">Hayato Shimada</maintainer>
   <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

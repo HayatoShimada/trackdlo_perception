@@ -1,4 +1,4 @@
-"""Base class for all segmentation nodes in trackdlo_ros2.
+"""Base class for all segmentation nodes in trackdlo_perception.
 
 All segmentation implementations (HSV, SAM2, YOLO, DeepLab, etc.)
 inherit from this class and implement the segment() method.

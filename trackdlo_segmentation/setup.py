@@ -4,7 +4,7 @@ package_name = 'trackdlo_segmentation'
 
 setup(
     name=package_name,
-    version='1.0.0',
+    version='2.0.0',
     packages=find_packages(exclude=['test']),
     data_files=[
         ('share/ament_index/resource_index/packages',
@@ -13,9 +13,9 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='TODO',
-    maintainer_email='todo@todo.com',
-    description='Pluggable segmentation interface for trackdlo_ros2',
+    maintainer='Hayato Shimada',
+    maintainer_email='info@85-store.com',
+    description='Pluggable segmentation interface for trackdlo_perception',
     license='BSD-3-Clause',
     tests_require=['pytest'],
     entry_points={

@@ -4,7 +4,7 @@
   <name>trackdlo_core</name>
   <version>2.0.0</version>
   <description>TrackDLO2: Tracking Deformable Linear Objects - Core perception package (ROS2 Humble)</description>
-  <maintainer email="todo@todo.com">TODO</maintainer>
+  <maintainer email="info@85-store.com">Hayato Shimada</maintainer>
   <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

@@ -3,8 +3,8 @@
 <package format="3">
   <name>trackdlo_utils</name>
   <version>2.0.0</version>
-  <description>TrackDLO2: Utility scripts for testing, evaluation, and visualization</description>
-  <maintainer email="todo@todo.com">TODO</maintainer>
+  <description>trackdlo_perception: Visualization and parameter tuning tools</description>
+  <maintainer email="info@85-store.com">Hayato Shimada</maintainer>
   <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_python</buildtool_depend>
