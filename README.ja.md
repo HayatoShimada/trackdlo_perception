@@ -272,6 +272,11 @@ trackdlo_perception は標準 ROS2 メッセージ型のみを使用。同じ `R
 }
 ```
 
+## ドキュメント
+
+- [APIリファレンス (日本語)](API.ja.md) — 全パラメータ、トピック、C++ライブラリAPI、Pythonセグメンテーション API
+- [API Reference (English)](API.md)
+
 ## ライセンス
 
 BSD-3-Clause

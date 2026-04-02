@@ -271,6 +271,11 @@ If you use this software in your research, please cite the original TrackDLO pap
 }
 ```
 
+## Documentation
+
+- [API Reference (English)](API.md) — Full parameter list, topics, C++ library API, Python segmentation API
+- [APIリファレンス (日本語)](API.ja.md)
+
 ## License
 
 BSD-3-Clause
