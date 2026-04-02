@@ -1,0 +1,30 @@
+Package: ros-humble-trackdlo-core
+Version: 2.0.0-0jammy
+Architecture: amd64
+Maintainer: Hayato Shimada <info@85-store.com>
+Installed-Size: 2079
+Depends: libc6 (>= 2.34), libgcc-s1 (>= 3.3.1), libopencv-core4.5d (>= 4.5.4+dfsg), libopencv-features2d4.5d (>= 4.5.4+dfsg), libopencv-flann4.5d (>= 4.5.4+dfsg), libopencv-imgcodecs4.5d (>= 4.5.4+dfsg), libopencv-imgproc4.5d (>= 4.5.4+dfsg), libopencv-stitching4.5d (>= 4.5.4+dfsg), libpcl-common1.12 (>= 1.12.1+dfsg), libpcl-filters1.12 (>= 1.12.1+dfsg), libstdc++6 (>= 11), ros-humble-ament-index-cpp, ros-humble-cv-bridge, ros-humble-image-transport, ros-humble-message-filters, ros-humble-pcl-conversions, ros-humble-pcl-ros, ros-humble-rclcpp, ros-humble-rclpy, ros-humble-rosbag2-cpp, ros-humble-sensor-msgs, ros-humble-sensor-msgs-py, ros-humble-std-msgs, ros-humble-tf2-ros, ros-humble-visualization-msgs
+Filename: ./ros-humble-trackdlo-core_2.0.0-0jammy_amd64.deb
+Size: 504916
+MD5sum: 054641295ed09dbc03ecfc30a821909a
+SHA1: 2feb63da32806b269d654d9efa24b3e9e9e0e4f7
+SHA256: b68089622b313aa909d51bce8862946cfb623f95ab6e0a75a45765ff45333161
+Section: misc
+Priority: optional
+Description: TrackDLO2: Tracking Deformable Linear Objects - Core perception package (ROS2 Humble)
+
+Package: ros-humble-trackdlo-msgs
+Version: 2.0.0-0jammy
+Architecture: amd64
+Maintainer: Hayato Shimada <info@85-store.com>
+Installed-Size: 41
+Depends: ros-humble-geometry-msgs, ros-humble-rosidl-default-runtime, ros-humble-std-msgs
+Filename: ./ros-humble-trackdlo-msgs_2.0.0-0jammy_amd64.deb
+Size: 5066
+MD5sum: 47309aa979c0b411a8ce6fed673324da
+SHA1: c06e0265a48a7ef8f568ef2d9529e9ed29cffc1e
+SHA256: 2e510f7cbc28a8233c0f49fb5d7460e89bdab9c7b1265379b7afc8385a2b1b7d
+Section: misc
+Priority: optional
+Description: TrackDLO2: Custom message definitions (reserved for future use)
+

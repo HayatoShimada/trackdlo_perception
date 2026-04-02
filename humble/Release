@@ -1,0 +1,7 @@
+Origin: trackdlo_perception
+Label: trackdlo_perception
+Suite: humble
+Codename: humble
+Architectures: amd64
+Components: main
+Description: trackdlo_perception ROS2 packages
