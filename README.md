@@ -1,93 +1,87 @@
-# trackdlo_ros2
+# trackdlo_perception
 
-ROS2 (Humble/Jazzy) ベースの変形線状物体 (DLO: Deformable Linear Object) リアルタイム追跡システム。
-Intel RealSense RGB-D カメラ (D415/D435/D455) で DLO を認識・追跡し、プレビューウィンドウで結果を確認できる。
+Real-time tracking of Deformable Linear Objects (DLO) using ROS2 and Intel RealSense RGB-D cameras.
 
-## 特徴
+[日本語版はこちら](README.ja.md)
 
-- **CPD-LLE アルゴリズム**によるリアルタイム DLO 追跡
-- **プラグイン可能なセグメンテーション**: HSV / SAM2 / YOLO / DeepLab (拡張可能)
-- **4パネルプレビューウィンドウ**: カメラ映像、マスク、オーバーレイ、追跡結果を同時表示
-- **Docker ベース**: ワンコマンドで起動、GPU 自動検出
-- **Humble / Jazzy 対応**: `ROS_DISTRO` ビルド引数で切替
+Based on [TrackDLO](https://github.com/RMDLO/trackdlo) by RMDLO.
 
-## パッケージ構成
+## Features
+
+- **Real-time DLO tracking** via CPD-LLE algorithm
+- **Pluggable segmentation**: HSV / YOLO / DeepLab (extensible via `SegmentationNodeBase`)
+- **4-panel preview window**: camera feed, mask, overlay, and tracking results
+- **Docker-based**: single command launch with automatic GPU detection
+- **ROS2 Humble / Jazzy**: switch via `ROS_DISTRO` build argument
+
+## Package Structure
 
 ```
-trackdlo_ros2/
-├── trackdlo_core/     CPD-LLE 追跡アルゴリズム (C++17 + Python)
-├── trackdlo_segmentation/   セグメンテーション基底クラス + HSV 実装
-├── trackdlo_utils/          Composite View, SAM2, パラメータチューナー
-├── trackdlo_bringup/        Launch ファイル・パラメータ・RViz 設定
-├── trackdlo_msgs/           カスタムメッセージ (将来用)
-└── docker/                  Docker Compose + GPU 設定
+trackdlo_perception/
+├── trackdlo_core/           CPD-LLE tracking algorithm (C++17 + Python)
+├── trackdlo_segmentation/   Segmentation base class + HSV implementation
+├── trackdlo_utils/          Composite view, parameter tuner
+├── trackdlo_bringup/        Launch files, YAML params, RViz config
+├── trackdlo_msgs/           Custom messages (reserved for future use)
+└── docker/                  Docker Compose + GPU configuration
 ```
 
-## クイックスタート
+## Quick Start
 
-### ビルド (Docker)
+### Docker Build
 
 ```bash
 cd docker/
 
-# 全イメージをビルド
+# Build all images
 bash build.sh
 
-# Core のみ
+# Build core only
 bash build.sh core
 
-# SAM2 (CPU / CUDA)
-bash build.sh sam2
-bash build.sh sam2-cuda
-
-# Jazzy でビルド
+# Build for Jazzy
 ROS_DISTRO=jazzy bash build.sh
 ```
 
-### 起動
+### Docker Run
 
 ```bash
 xhost +local:docker
 cd docker/
 
-# HSV セグメンテーション (デフォルト)
+# HSV segmentation (default)
 ./run.sh
 
-# HSV チューナー GUI
+# HSV tuner GUI
 ./run.sh hsv_tuner
 
-# SAM2 セグメンテーション (別コンテナで起動)
-./run.sh sam2
-
-# バックグラウンド起動
+# Background mode
 ./run.sh hsv -d
 ```
 
-### ネイティブ起動
+### Native Build
 
 ```bash
-# ビルド
+# Build
 colcon build --packages-select trackdlo_msgs trackdlo_segmentation trackdlo_core trackdlo_utils trackdlo_bringup --cmake-args -DCMAKE_BUILD_TYPE=Release
 source install/setup.bash
 
-# 起動
+# Launch
 ros2 launch trackdlo_bringup trackdlo.launch.py
 ros2 launch trackdlo_bringup trackdlo.launch.py segmentation:=hsv_tuner
-ros2 launch trackdlo_bringup trackdlo.launch.py segmentation:=sam2
 ros2 launch trackdlo_bringup trackdlo.launch.py rviz:=false
 ```
 
-## セグメンテーションモード
+## Segmentation Modes
 
-| モード | 説明 | ユースケース |
-|--------|------|-------------|
-| `hsv` (デフォルト) | HSV しきい値処理 | DLO の色が既知、パラメータ調整済み |
-| `hsv_tuner` | スライダー GUI でリアルタイム調整 | 新しい DLO の HSV 値を探す |
-| `sam2` | Segment Anything Model 2 | 色に依存しない汎用セグメンテーション |
+| Mode | Description | Use Case |
+|------|-------------|----------|
+| `hsv` (default) | HSV thresholding | DLO color is known, parameters tuned |
+| `hsv_tuner` | Real-time slider GUI | Finding HSV values for a new DLO |
 
-### セグメンテーションの拡張
+### Pluggable Segmentation
 
-`SegmentationNodeBase` を継承するだけで新しいセグメンテーション手法を追加できる:
+Add new segmentation backends by subclassing `SegmentationNodeBase`:
 
 ```python
 from trackdlo_segmentation import SegmentationNodeBase
@@ -102,82 +96,81 @@ class MySegmentationNode(SegmentationNodeBase):
         ...
 ```
 
-全セグメンテーションノードは `/trackdlo/segmentation_mask` (mono8) にパブリッシュする。
+All segmentation nodes publish to `/trackdlo/segmentation_mask` (mono8).
 
-## アーキテクチャ
+## Architecture
 
-### Docker 構成
+### Docker
 
 ```
-trackdlo-core コンテナ              trackdlo-sam2 コンテナ (optional)
-┌─────────────────────┐            ┌─────────────────────┐
-│ RealSense driver    │            │ SAM2 segmentation   │
-│ trackdlo_node (C++) │◄───────────│   node              │
-│ init_tracker (Py)   │  /trackdlo/│                     │
-│ HSV segmentation    │  segmentation_mask               │
-│ composite_view      │            └─────────────────────┘
-│ param_tuner         │              docker compose
-│ RViz2               │              --profile sam2
+trackdlo-core container
+┌─────────────────────┐
+│ RealSense driver    │
+│ trackdlo_node (C++) │
+│ init_tracker (Py)   │
+│ HSV segmentation    │
+│ composite_view      │
+│ param_tuner         │
+│ RViz2               │
 └─────────────────────┘
     host network (CycloneDDS, ROS_DOMAIN_ID=42)
 ```
 
-### 処理パイプライン
+### Processing Pipeline
 
 ```
 [RealSense D435/D415]
-    │
-    ├── /camera/color/image_raw
-    ├── /camera/aligned_depth_to_color/image_raw
-    │
-    ↓
-[セグメンテーション]  ← HSV / SAM2 / YOLO (差し替え可能)
-    │
-    ↓ /trackdlo/segmentation_mask
-    │
+    |
+    +-- /camera/color/image_raw
+    +-- /camera/aligned_depth_to_color/image_raw
+    |
+    v
+[Segmentation]  <- HSV / YOLO / DeepLab (swappable)
+    |
+    v /trackdlo/segmentation_mask
+    |
 [trackdlo_node (CPD-LLE)]
-    │
-    ├── /trackdlo/results_pc      (追跡済み DLO ノード座標)
-    ├── /trackdlo/results_img     (追跡結果の可視化)
-    │
-    ↓
-[composite_view]  ← 4パネルプレビューウィンドウ
+    |
+    +-- /trackdlo/results_pc      (tracked DLO node positions)
+    +-- /trackdlo/results_img     (tracking result visualization)
+    |
+    v
+[composite_view]  <- 4-panel preview window
 ```
 
-## 他の ROS2 プロジェクトとの連携
+## Integration with Other ROS2 Projects
 
-trackdlo_ros2 は標準 ROS2 メッセージ型のみを使用。同じ `ROS_DOMAIN_ID` を設定するだけで他のコンテナから購読可能:
+trackdlo_perception uses only standard ROS2 message types. Subscribe from any container sharing the same `ROS_DOMAIN_ID`:
 
 ```python
-# 他のプロジェクトから追跡結果を購読する例
+# Subscribe to tracking results from another project
 self.create_subscription(PointCloud2, '/trackdlo/results_pc', self.callback, 10)
 ```
 
-## 主要パラメータ
+## Key Parameters
 
-`trackdlo_bringup/config/realsense_params.yaml` で設定:
+Configured in `trackdlo_bringup/config/realsense_params.yaml`:
 
-| パラメータ | デフォルト値 | 説明 |
-|---|---|---|
-| `beta` | 0.35 | 形状剛性 (小さいほど柔軟) |
-| `lambda` | 50000.0 | 大域的滑らかさの強度 |
-| `alpha` | 3.0 | 初期形状への整合性 |
-| `mu` | 0.1 | ノイズ比率 |
-| `max_iter` | 20 | EM 最大反復数 |
-| `k_vis` | 50.0 | 可視性項の重み |
-| `d_vis` | 0.06 | ギャップ補間の最大測地線距離 (m) |
-| `visibility_threshold` | 0.008 | 可視判定の距離しきい値 (m) |
-| `downsample_leaf_size` | 0.02 | ボクセルサイズ (m) |
-| `num_of_nodes` | 30 | 追跡ノード数 |
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `beta` | 0.35 | Shape rigidity (smaller = more flexible) |
+| `lambda` | 50000.0 | Global smoothness strength |
+| `alpha` | 3.0 | Conformity to initial shape |
+| `mu` | 0.1 | Noise ratio |
+| `max_iter` | 20 | Maximum EM iterations |
+| `k_vis` | 50.0 | Visibility term weight |
+| `d_vis` | 0.06 | Max geodesic distance for gap interpolation (m) |
+| `visibility_threshold` | 0.008 | Visibility distance threshold (m) |
+| `downsample_leaf_size` | 0.02 | Voxel size (m) |
+| `num_of_nodes` | 30 | Number of tracking nodes |
 
-## 依存関係
+## Dependencies
 
 - ROS2 Humble or Jazzy
 - Intel RealSense SDK 2.0 (realsense2_camera)
 - OpenCV, PCL, Eigen3
 - scikit-image, scipy, Open3D
-- (optional) PyTorch + SAM2
 
-## ライセンス
+## License
 
 BSD-3-Clause

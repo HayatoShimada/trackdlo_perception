@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-trackdlo_ros2 is a ROS2 (Humble/Jazzy) system for real-time tracking of Deformable Linear Objects (DLO). It uses RGB-D camera input (Intel RealSense D415/D435/D455) to detect and track DLO via the CPD-LLE algorithm, with a pluggable segmentation architecture and a 4-panel preview window.
+trackdlo_perception is a ROS2 (Humble/Jazzy) system for real-time tracking of Deformable Linear Objects (DLO). It uses RGB-D camera input (Intel RealSense D415/D435/D455) to detect and track DLO via the CPD-LLE algorithm, with a pluggable segmentation architecture and a 4-panel preview window.
 
 ## Build & Development Commands
 
@@ -30,16 +30,9 @@ bash build.sh
 # Build core only
 bash build.sh core
 
-# Build SAM2 (CPU)
-bash build.sh sam2
-
-# Build SAM2 (CUDA)
-bash build.sh sam2-cuda
-
 # Run
 ./run.sh                  # HSV segmentation (default)
 ./run.sh hsv_tuner        # HSV with tuner GUI
-./run.sh sam2             # SAM2 segmentation
 ./run.sh hsv -d           # Detached mode
 
 # Build for Jazzy
@@ -63,9 +56,6 @@ ros2 launch trackdlo_bringup trackdlo.launch.py
 # HSV tuner GUI
 ros2 launch trackdlo_bringup trackdlo.launch.py segmentation:=hsv_tuner
 
-# SAM2 segmentation
-ros2 launch trackdlo_bringup trackdlo.launch.py segmentation:=sam2
-
 # Without RViz
 ros2 launch trackdlo_bringup trackdlo.launch.py rviz:=false
 ```
@@ -73,9 +63,8 @@ ros2 launch trackdlo_bringup trackdlo.launch.py rviz:=false
 ## Architecture
 
 ### Docker Architecture
-1-2 containers communicating via ROS2 topics (host network, CycloneDDS):
+Single container communicating via ROS2 topics (host network, CycloneDDS):
 - **trackdlo-core**: RealSense driver + perception + HSV segmentation + composite view + RViz2
-- **trackdlo-sam2** (optional): SAM2 segmentation node (via `--profile sam2`)
 
 ### Package Structure
 
@@ -83,7 +72,7 @@ ros2 launch trackdlo_bringup trackdlo.launch.py rviz:=false
 |---------|----------|-------|------|
 | `trackdlo_core` | C++17 + Python | ament_cmake | Core CPD-LLE tracking algorithm + initialization |
 | `trackdlo_segmentation` | Python | ament_python | Pluggable segmentation interface (base class + HSV) |
-| `trackdlo_utils` | Python | ament_python | Composite view, SAM2 segmentation, param tuner, test tools |
+| `trackdlo_utils` | Python | ament_python | Composite view, param tuner, test tools |
 | `trackdlo_bringup` | Launch/Config | ament_cmake | Launch files, YAML params, RViz config |
 | `trackdlo_msgs` | ROS IDL | ament_cmake | Custom messages (reserved for future use) |
 
@@ -103,7 +92,7 @@ ros2 launch trackdlo_bringup trackdlo.launch.py rviz:=false
 ### Key ROS2 Topics
 - `/trackdlo/init_nodes` (PointCloud2) — Initial nodes, published once
 - `/trackdlo/results_pc` (PointCloud2) — Per-frame tracked node positions
-- `/trackdlo/segmentation_mask` (Image) — Segmentation mask (from HSV/SAM2/external)
+- `/trackdlo/segmentation_mask` (Image) — Segmentation mask (from HSV or external)
 - `/trackdlo/results_img` (Image) — Tracking result visualization
 
 ### Segmentation Architecture
