@@ -23,7 +23,8 @@ jobs:
             dpkg-dev fakeroot debhelper dh-python \
             python3-bloom python3-rosdep
           rosdep update --rosdistro ${{ matrix.ros_distro }}
-          rosdep install --from-paths . --ignore-src -y --rosdistro ${{ matrix.ros_distro }}
+          rosdep install --from-paths . --ignore-src -y --rosdistro ${{ matrix.ros_distro }} \
+            --skip-keys="ament_python"
 
       - name: Build workspace
         run: |
