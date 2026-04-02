@@ -8,7 +8,17 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-enable_language(CUDA)
+# Optional CUDA support
+include(CheckLanguage)
+check_language(CUDA)
+option(USE_CUDA "Enable CUDA GPU acceleration" ${CMAKE_CUDA_COMPILER})
+if(USE_CUDA AND CMAKE_CUDA_COMPILER)
+  enable_language(CUDA)
+  message(STATUS "CUDA found: GPU acceleration enabled")
+else()
+  set(USE_CUDA OFF)
+  message(STATUS "CUDA not found: using CPU-only mode")
+endif()
 
 # Find dependencies
 find_package(ament_cmake REQUIRED)
@@ -34,7 +44,7 @@ include_directories(
 )
 
 # Core algorithm library
-add_library(trackdlo_core SHARED
+set(TRACKDLO_CORE_SOURCES
   src/trackdlo.cpp
   src/utils.cpp
   src/evaluator.cpp
@@ -42,8 +52,18 @@ add_library(trackdlo_core SHARED
   src/visibility_checker.cpp
   src/visualizer.cpp
   src/pipeline_manager.cpp
-  src/pointcloud_cuda.cu
 )
+
+if(USE_CUDA)
+  list(APPEND TRACKDLO_CORE_SOURCES src/pointcloud_cuda.cu)
+endif()
+
+add_library(trackdlo_core SHARED ${TRACKDLO_CORE_SOURCES})
+
+if(USE_CUDA)
+  target_compile_definitions(trackdlo_core PUBLIC USE_CUDA)
+endif()
+
 target_link_libraries(trackdlo_core
   Eigen3::Eigen
   ${PCL_LIBRARIES}
