@@ -3,9 +3,13 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
-#include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
-#include <message_filters/sync_policies/approximate_time.h>
+
+#include <librealsense2/rs.hpp>
+#include <std_srvs/srv/trigger.hpp>
+#include <trackdlo_msgs/msg/tracking_status.hpp>
+#include <thread>
+#include <atomic>
+#include <mutex>
 
 #include <rclcpp/rclcpp.hpp>
 #include <rcl_interfaces/msg/set_parameters_result.hpp>
@@ -42,9 +46,7 @@ public:
     pub_data_total_(0.0),
     frames_(0)
   {
-    // Declare and get parameters
-
-    // --- 追跡アルゴリズム (CPD-LLE) の主要パラメータ ---
+    // --- Tracking algorithm (CPD-LLE) parameters ---
     this->declare_parameter<double>("beta", 0.35);
     this->declare_parameter<double>("lambda", 50000.0);
     this->declare_parameter<double>("alpha", 3.0);
@@ -52,30 +54,32 @@ public:
     this->declare_parameter<int>("max_iter", 50);
     this->declare_parameter<double>("tol", 0.0002);
 
-    // --- 可視性・オクルージョン判定パラメータ ---
+    // --- Visibility / occlusion parameters ---
     this->declare_parameter<double>("k_vis", 50.0);
     this->declare_parameter<double>("d_vis", 0.06);
     this->declare_parameter<double>("visibility_threshold", 0.008);
 
-    // --- 画像描画・事前処理パラメータ ---
+    // --- Image drawing / preprocessing parameters ---
     this->declare_parameter<int>("dlo_pixel_width", 40);
     this->declare_parameter<double>("beta_pre_proc", 3.0);
     this->declare_parameter<double>("lambda_pre_proc", 1.0);
     this->declare_parameter<double>("lle_weight", 10.0);
 
-    // --- その他の動作設定 ---
+    // --- Other settings ---
     this->declare_parameter<bool>("multi_color_dlo", false);
     this->declare_parameter<double>("downsample_leaf_size", 0.008);
 
-    this->declare_parameter<std::string>(
-      "camera_info_topic",
-      "/camera/aligned_depth_to_color/camera_info");
-    this->declare_parameter<std::string>("rgb_topic", "/camera/color/image_raw");
-    this->declare_parameter<std::string>("depth_topic", "/camera/aligned_depth_to_color/image_raw");
     this->declare_parameter<std::string>("result_frame_id", "camera_color_optical_frame");
     this->declare_parameter<std::string>("hsv_threshold_upper_limit", "130 255 255");
     this->declare_parameter<std::string>("hsv_threshold_lower_limit", "90 90 30");
     this->declare_parameter<bool>("use_external_mask", false);
+
+    // --- Camera parameters (librealsense2 direct capture) ---
+    this->declare_parameter<int>("camera_width", 424);
+    this->declare_parameter<int>("camera_height", 240);
+    this->declare_parameter<int>("camera_fps", 30);
+    this->declare_parameter<std::string>("camera_serial_no", "");
+    this->declare_parameter<std::string>("segmentation_mode", "internal");
 
     beta_ = this->get_parameter("beta").as_double();
     lambda_ = this->get_parameter("lambda").as_double();
@@ -93,48 +97,56 @@ public:
     multi_color_dlo_ = this->get_parameter("multi_color_dlo").as_bool();
     downsample_leaf_size_ = this->get_parameter("downsample_leaf_size").as_double();
 
-    camera_info_topic_ = this->get_parameter("camera_info_topic").as_string();
-    rgb_topic_ = this->get_parameter("rgb_topic").as_string();
-    depth_topic_ = this->get_parameter("depth_topic").as_string();
     result_frame_id_ = this->get_parameter("result_frame_id").as_string();
+    use_external_mask_ = this->get_parameter("use_external_mask").as_bool();
+
+    camera_width_ = this->get_parameter("camera_width").as_int();
+    camera_height_ = this->get_parameter("camera_height").as_int();
+    camera_fps_ = this->get_parameter("camera_fps").as_int();
+    camera_serial_no_ = this->get_parameter("camera_serial_no").as_string();
+    segmentation_mode_ = this->get_parameter("segmentation_mode").as_string();
+
+    // Parse HSV thresholds
     std::string hsv_threshold_upper_limit =
       this->get_parameter("hsv_threshold_upper_limit").as_string();
     std::string hsv_threshold_lower_limit =
       this->get_parameter("hsv_threshold_lower_limit").as_string();
-    use_external_mask_ = this->get_parameter("use_external_mask").as_bool();
 
-    std::vector<int> upper;
     std::string rgb_val = "";
     for (size_t i = 0; i < hsv_threshold_upper_limit.length(); i++) {
       if (hsv_threshold_upper_limit.substr(i, 1) != " ") {
         rgb_val += hsv_threshold_upper_limit.substr(i, 1);
       } else {
-        upper.push_back(std::stoi(rgb_val));
+        hsv_upper_.push_back(std::stoi(rgb_val));
         rgb_val = "";
       }
       if (i == hsv_threshold_upper_limit.length() - 1) {
-        upper.push_back(std::stoi(rgb_val));
+        hsv_upper_.push_back(std::stoi(rgb_val));
       }
     }
 
-    std::vector<int> lower;
     rgb_val = "";
     for (size_t i = 0; i < hsv_threshold_lower_limit.length(); i++) {
       if (hsv_threshold_lower_limit.substr(i, 1) != " ") {
         rgb_val += hsv_threshold_lower_limit.substr(i, 1);
       } else {
-        lower.push_back(std::stoi(rgb_val));
+        hsv_lower_.push_back(std::stoi(rgb_val));
         rgb_val = "";
       }
       if (i == hsv_threshold_lower_limit.length() - 1) {
-        lower.push_back(std::stoi(rgb_val));
+        hsv_lower_.push_back(std::stoi(rgb_val));
       }
     }
 
+    // When segmentation_mode is "internal", we provide the mask externally
+    // (from our own HSV computation), so use_external_mask should be true
+    // for the pipeline manager.
+    bool pipeline_use_external = use_external_mask_ || (segmentation_mode_ == "internal");
+
     pipeline_manager_ = std::make_unique<trackdlo_core::PipelineManager>(
-      use_external_mask_,
-      multi_color_dlo_, lower,
-      upper);
+      pipeline_use_external,
+      multi_color_dlo_, hsv_lower_,
+      hsv_upper_);
     update_pipeline_parameters();
 
     proj_matrix_.setZero();
@@ -190,19 +202,24 @@ public:
       });
   }
 
+  ~TrackDLONode()
+  {
+    stop_camera();
+  }
+
   void init()
   {
-    int pub_queue_size = 30;
+    int pub_queue_size = 1;
 
     image_transport::ImageTransport it(shared_from_this());
 
     opencv_mask_sub_ = it.subscribe(
-      "/mask_with_occlusion", 10,
+      "/mask_with_occlusion", 1,
       std::bind(&TrackDLONode::update_opencv_mask, this, std::placeholders::_1));
 
-    if (use_external_mask_) {
+    if (use_external_mask_ && segmentation_mode_ != "internal") {
       external_mask_sub_ = it.subscribe(
-        "/trackdlo/segmentation_mask", 10,
+        "/trackdlo/segmentation_mask", 1,
         std::bind(&TrackDLONode::update_external_mask, this, std::placeholders::_1));
       RCLCPP_INFO(
         this->get_logger(),
@@ -213,10 +230,13 @@ public:
       "/trackdlo/init_nodes", 1,
       std::bind(&TrackDLONode::update_init_nodes, this, std::placeholders::_1));
 
-    camera_info_sub_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(
-      camera_info_topic_, 1,
-      std::bind(&TrackDLONode::update_camera_info, this, std::placeholders::_1));
+    // RGB/Depth republish for init_tracker, composite_view, etc.
+    rgb_pub_ = it.advertise("/camera/color/image_raw", pub_queue_size);
+    depth_pub_ = it.advertise("/camera/aligned_depth_to_color/image_raw", pub_queue_size);
+    camera_info_pub_ = this->create_publisher<sensor_msgs::msg::CameraInfo>(
+      "/camera/aligned_depth_to_color/camera_info", pub_queue_size);
 
+    // Result publishers
     tracking_img_pub_ = it.advertise("/trackdlo/results_img", pub_queue_size);
     seg_mask_pub_ = it.advertise("/trackdlo/segmentation_mask_img", pub_queue_size);
     seg_overlay_pub_ = it.advertise("/trackdlo/segmentation_overlay", pub_queue_size);
@@ -234,25 +254,53 @@ public:
     self_occluded_pc_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
       "/trackdlo/self_occluded_pc", pub_queue_size);
 
-    image_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(
-      shared_from_this(), rgb_topic_, rmw_qos_profile_default);
-    depth_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(
-      shared_from_this(), depth_topic_, rmw_qos_profile_default);
+    // Services
+    start_srv_ = this->create_service<std_srvs::srv::Trigger>(
+      "/trackdlo/start",
+      std::bind(&TrackDLONode::on_start, this, std::placeholders::_1, std::placeholders::_2));
+    stop_srv_ = this->create_service<std_srvs::srv::Trigger>(
+      "/trackdlo/stop",
+      std::bind(&TrackDLONode::on_stop, this, std::placeholders::_1, std::placeholders::_2));
+    reset_srv_ = this->create_service<std_srvs::srv::Trigger>(
+      "/trackdlo/reset",
+      std::bind(&TrackDLONode::on_reset, this, std::placeholders::_1, std::placeholders::_2));
 
-    sync_ = std::make_shared<message_filters::Synchronizer<ApproxSyncPolicy>>(
-      ApproxSyncPolicy(10), *image_sub_, *depth_sub_);
+    // Status publisher at 1Hz
+    status_pub_ = this->create_publisher<trackdlo_msgs::msg::TrackingStatus>(
+      "/trackdlo/status", 1);
+    status_timer_ = this->create_wall_timer(
+      std::chrono::seconds(1),
+      std::bind(&TrackDLONode::publish_status, this));
 
-    sync_->registerCallback(
-      std::bind(
-        &TrackDLONode::Callback, this,
-        std::placeholders::_1, std::placeholders::_2));
-
-    RCLCPP_INFO_STREAM(this->get_logger(), "TrackDLO node initialized.");
+    RCLCPP_INFO_STREAM(this->get_logger(), "TrackDLO node initialized. State: IDLE");
+    RCLCPP_INFO_STREAM(this->get_logger(), "Call /trackdlo/start to begin camera capture.");
   }
 
 private:
-  using ApproxSyncPolicy = message_filters::sync_policies::ApproximateTime<
-    sensor_msgs::msg::Image, sensor_msgs::msg::Image>;
+  // ---------- librealsense2 ----------
+  rs2::pipeline rs_pipe_;
+  rs2::align rs_align_{RS2_STREAM_COLOR};
+  std::thread camera_thread_;
+  std::atomic<bool> running_{false};
+
+  // ---------- Camera params ----------
+  int camera_width_;
+  int camera_height_;
+  int camera_fps_;
+  std::string camera_serial_no_;
+  std::string segmentation_mode_;
+
+  // ---------- State management ----------
+  enum class State { IDLE, INITIALIZING, TRACKING, ERROR };
+  std::atomic<State> state_{State::IDLE};
+  std::string status_message_{"Idle"};
+  std::mutex status_mutex_;
+  int tracked_nodes_{0};
+  double current_fps_{0.0};
+
+  // ---------- HSV thresholds ----------
+  std::vector<int> hsv_upper_;
+  std::vector<int> hsv_lower_;
 
   // ---------- Publishers ----------
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pc_pub_;
@@ -266,16 +314,24 @@ private:
   image_transport::Publisher seg_mask_pub_;
   image_transport::Publisher seg_overlay_pub_;
 
+  // RGB/Depth republish publishers
+  image_transport::Publisher rgb_pub_;
+  image_transport::Publisher depth_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr camera_info_pub_;
+
+  // ---------- Services ----------
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_srv_;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr stop_srv_;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr reset_srv_;
+
+  // ---------- Status publisher ----------
+  rclcpp::Publisher<trackdlo_msgs::msg::TrackingStatus>::SharedPtr status_pub_;
+  rclcpp::TimerBase::SharedPtr status_timer_;
+
   // ---------- Subscribers ----------
   image_transport::Subscriber opencv_mask_sub_;
   image_transport::Subscriber external_mask_sub_;
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr init_nodes_sub_;
-  rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr camera_info_sub_;
-
-  // ---------- Synchronized subscribers ----------
-  std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image>> image_sub_;
-  std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image>> depth_sub_;
-  std::shared_ptr<message_filters::Synchronizer<ApproxSyncPolicy>> sync_;
 
   // ---------- Timer for deferred init ----------
   rclcpp::TimerBase::SharedPtr init_timer_;
@@ -310,9 +366,6 @@ private:
   double d_vis_;
   double downsample_leaf_size_;
 
-  std::string camera_info_topic_;
-  std::string rgb_topic_;
-  std::string depth_topic_;
   std::string result_frame_id_;
   bool use_external_mask_;
 
@@ -373,26 +426,190 @@ private:
       }
       pipeline_manager_->initialize_tracker(init_nodes_, converted_node_coord);
       reinit_requested_ = false;
+
+      {
+        std::lock_guard<std::mutex> lock(status_mutex_);
+        state_.store(State::TRACKING);
+        status_message_ = "Re-initialized, tracking";
+        tracked_nodes_ = static_cast<int>(init_nodes_.rows());
+      }
     }
   }
 
-  void update_camera_info(const sensor_msgs::msg::CameraInfo::ConstSharedPtr & cam_msg)
+  // ==================== Camera management ====================
+
+  bool start_camera()
   {
-    auto P = cam_msg->p;
-    for (size_t i = 0; i < P.size(); i++) {
-      proj_matrix_(i / 4, i % 4) = P[i];
+    try {
+      rs2::config cfg;
+      if (!camera_serial_no_.empty()) {
+        cfg.enable_device(camera_serial_no_);
+      }
+      cfg.enable_stream(
+        RS2_STREAM_COLOR, camera_width_, camera_height_, RS2_FORMAT_BGR8, camera_fps_);
+      cfg.enable_stream(
+        RS2_STREAM_DEPTH, camera_width_, camera_height_, RS2_FORMAT_Z16, camera_fps_);
+
+      auto profile = rs_pipe_.start(cfg);
+
+      // Extract intrinsics from color stream and build projection matrix
+      auto color_stream = profile.get_stream(RS2_STREAM_COLOR).as<rs2::video_stream_profile>();
+      auto intrinsics = color_stream.get_intrinsics();
+
+      proj_matrix_.setZero();
+      proj_matrix_(0, 0) = intrinsics.fx;
+      proj_matrix_(0, 2) = intrinsics.ppx;
+      proj_matrix_(1, 1) = intrinsics.fy;
+      proj_matrix_(1, 2) = intrinsics.ppy;
+      proj_matrix_(2, 2) = 1.0;
+      received_proj_matrix_ = true;
+
+      // Publish CameraInfo once
+      sensor_msgs::msg::CameraInfo cam_info_msg;
+      cam_info_msg.header.frame_id = result_frame_id_;
+      cam_info_msg.header.stamp = this->now();
+      cam_info_msg.width = static_cast<uint32_t>(intrinsics.width);
+      cam_info_msg.height = static_cast<uint32_t>(intrinsics.height);
+      cam_info_msg.distortion_model = "plumb_bob";
+      cam_info_msg.d.resize(5, 0.0);
+      for (int i = 0; i < 5; i++) {
+        cam_info_msg.d[i] = intrinsics.coeffs[i];
+      }
+      // K matrix (3x3 intrinsic)
+      cam_info_msg.k = {
+        intrinsics.fx, 0.0, intrinsics.ppx,
+        0.0, intrinsics.fy, intrinsics.ppy,
+        0.0, 0.0, 1.0};
+      // P matrix (3x4 projection)
+      cam_info_msg.p = {
+        intrinsics.fx, 0.0, intrinsics.ppx, 0.0,
+        0.0, intrinsics.fy, intrinsics.ppy, 0.0,
+        0.0, 0.0, 1.0, 0.0};
+      // R matrix (identity)
+      cam_info_msg.r = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
+      camera_info_pub_->publish(cam_info_msg);
+
+      RCLCPP_INFO(
+        this->get_logger(),
+        "Camera started: %dx%d @ %d fps (serial: %s)",
+        camera_width_, camera_height_, camera_fps_,
+        camera_serial_no_.empty() ? "auto" : camera_serial_no_.c_str());
+
+      return true;
+    } catch (const rs2::error & e) {
+      RCLCPP_ERROR(
+        this->get_logger(),
+        "Failed to start camera: %s", e.what());
+      return false;
     }
-    received_proj_matrix_ = true;
-    camera_info_sub_.reset();
   }
 
-  void Callback(
-    const sensor_msgs::msg::Image::ConstSharedPtr & image_msg,
-    const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg)
+  void stop_camera()
   {
-    Mat cur_image_orig = cv_bridge::toCvShare(image_msg, "bgr8")->image;
-    Mat cur_depth = cv_bridge::toCvShare(depth_msg, depth_msg->encoding)->image;
+    running_.store(false);
+    if (camera_thread_.joinable()) {
+      camera_thread_.join();
+    }
+    try {
+      rs_pipe_.stop();
+    } catch (...) {
+      // Ignore errors when stopping (may not be running)
+    }
+  }
 
+  void camera_loop()
+  {
+    auto last_fps_time = std::chrono::high_resolution_clock::now();
+    int fps_frame_count = 0;
+
+    while (running_.load()) {
+      try {
+        rs2::frameset frames = rs_pipe_.wait_for_frames(5000);
+        rs2::frameset aligned = rs_align_.process(frames);
+
+        auto color_frame = aligned.get_color_frame();
+        auto depth_frame = aligned.get_depth_frame();
+
+        if (!color_frame || !depth_frame) {
+          continue;
+        }
+
+        // Convert to cv::Mat
+        Mat color(
+          cv::Size(color_frame.get_width(), color_frame.get_height()),
+          CV_8UC3,
+          const_cast<void *>(color_frame.get_data()),
+          cv::Mat::AUTO_STEP);
+
+        Mat depth(
+          cv::Size(depth_frame.get_width(), depth_frame.get_height()),
+          CV_16UC1,
+          const_cast<void *>(depth_frame.get_data()),
+          cv::Mat::AUTO_STEP);
+
+        // Publish RGB and Depth for other nodes (init_tracker, composite_view)
+        auto stamp = this->now();
+        std_msgs::msg::Header header;
+        header.stamp = stamp;
+        header.frame_id = result_frame_id_;
+
+        rgb_pub_.publish(
+          cv_bridge::CvImage(header, "bgr8", color).toImageMsg());
+        depth_pub_.publish(
+          cv_bridge::CvImage(header, "16UC1", depth).toImageMsg());
+
+        // Internal HSV segmentation
+        if (segmentation_mode_ == "internal") {
+          Mat hsv;
+          cv::cvtColor(color, hsv, cv::COLOR_BGR2HSV);
+          Mat mask;
+          cv::inRange(
+            hsv,
+            cv::Scalar(hsv_lower_[0], hsv_lower_[1], hsv_lower_[2]),
+            cv::Scalar(hsv_upper_[0], hsv_upper_[1], hsv_upper_[2]),
+            mask);
+
+          // Morphological cleanup
+          int morph_size = 3;
+          Mat element = cv::getStructuringElement(
+            cv::MORPH_ELLIPSE,
+            cv::Size(2 * morph_size + 1, 2 * morph_size + 1));
+          cv::morphologyEx(mask, mask, cv::MORPH_OPEN, element);
+          cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, element);
+
+          pipeline_manager_->set_external_mask(mask);
+        }
+
+        // Process the frame
+        process_frame(color, depth, stamp);
+
+        // FPS calculation
+        fps_frame_count++;
+        auto now = std::chrono::high_resolution_clock::now();
+        double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+          now - last_fps_time).count() / 1000.0;
+        if (elapsed >= 1.0) {
+          std::lock_guard<std::mutex> lock(status_mutex_);
+          current_fps_ = fps_frame_count / elapsed;
+          fps_frame_count = 0;
+          last_fps_time = now;
+        }
+
+      } catch (const rs2::error & e) {
+        RCLCPP_ERROR(this->get_logger(), "RealSense error: %s", e.what());
+        {
+          std::lock_guard<std::mutex> lock(status_mutex_);
+          state_.store(State::ERROR);
+          status_message_ = std::string("Camera error: ") + e.what();
+        }
+        break;
+      }
+    }
+  }
+
+  void process_frame(const Mat & cur_image_orig, const Mat & cur_depth,
+    const rclcpp::Time & stamp)
+  {
     sensor_msgs::msg::Image::SharedPtr tracking_img_msg =
       cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", cur_image_orig).toImageMsg();
 
@@ -406,6 +623,21 @@ private:
           converted_node_coord.push_back(cur_sum);
         }
         pipeline_manager_->initialize_tracker(init_nodes_, converted_node_coord);
+
+        {
+          std::lock_guard<std::mutex> lock(status_mutex_);
+          state_.store(State::TRACKING);
+          status_message_ = "Tracking";
+          tracked_nodes_ = static_cast<int>(init_nodes_.rows());
+        }
+      } else {
+        // Waiting for init nodes
+        State cur = state_.load();
+        if (cur != State::INITIALIZING) {
+          std::lock_guard<std::mutex> lock(status_mutex_);
+          state_.store(State::INITIALIZING);
+          status_message_ = "Waiting for init nodes";
+        }
       }
     } else {
       std::chrono::high_resolution_clock::time_point cur_time_cb =
@@ -419,6 +651,11 @@ private:
         if (result.request_reinit && !reinit_requested_) {
           RCLCPP_WARN(this->get_logger(), "Requesting re-initialization.");
           reinit_requested_ = true;
+          {
+            std::lock_guard<std::mutex> lock(status_mutex_);
+            state_.store(State::INITIALIZING);
+            status_message_ = "Tracking lost, re-initializing";
+          }
         }
         if (!result.tracking_img.empty()) {
           tracking_img_msg =
@@ -483,9 +720,9 @@ private:
 
       cur_pc_msg.header.frame_id = result_frame_id_;
       result_pc_msg.header.frame_id = result_frame_id_;
-      result_pc_msg.header.stamp = image_msg->header.stamp;
+      result_pc_msg.header.stamp = stamp;
       self_occluded_pc_msg.header.frame_id = result_frame_id_;
-      self_occluded_pc_msg.header.stamp = image_msg->header.stamp;
+      self_occluded_pc_msg.header.stamp = stamp;
 
       results_pub_->publish(results_msg);
       guide_nodes_pub_->publish(guide_nodes_results);
@@ -513,9 +750,157 @@ private:
       RCLCPP_INFO_STREAM(
         this->get_logger(),
         "Avg total: " + std::to_string((algo_total_ + pub_data_total_) / frames_) + " ms");
+
+      {
+        std::lock_guard<std::mutex> lock(status_mutex_);
+        tracked_nodes_ = static_cast<int>(result.Y.rows());
+      }
     }
 
     tracking_img_pub_.publish(tracking_img_msg);
+  }
+
+  // ==================== Service callbacks ====================
+
+  void on_start(
+    const std::shared_ptr<std_srvs::srv::Trigger::Request> /*request*/,
+    std::shared_ptr<std_srvs::srv::Trigger::Response> response)
+  {
+    if (running_.load()) {
+      response->success = false;
+      response->message = "Camera is already running";
+      return;
+    }
+
+    if (!start_camera()) {
+      response->success = false;
+      response->message = "Failed to start camera";
+      {
+        std::lock_guard<std::mutex> lock(status_mutex_);
+        state_.store(State::ERROR);
+        status_message_ = "Camera start failed";
+      }
+      return;
+    }
+
+    running_.store(true);
+    camera_thread_ = std::thread(&TrackDLONode::camera_loop, this);
+
+    {
+      std::lock_guard<std::mutex> lock(status_mutex_);
+      state_.store(State::INITIALIZING);
+      status_message_ = "Camera started, waiting for init nodes";
+    }
+
+    response->success = true;
+    response->message = "Camera started";
+    RCLCPP_INFO(this->get_logger(), "Camera started via service call");
+  }
+
+  void on_stop(
+    const std::shared_ptr<std_srvs::srv::Trigger::Request> /*request*/,
+    std::shared_ptr<std_srvs::srv::Trigger::Response> response)
+  {
+    if (!running_.load()) {
+      response->success = false;
+      response->message = "Camera is not running";
+      return;
+    }
+
+    stop_camera();
+
+    {
+      std::lock_guard<std::mutex> lock(status_mutex_);
+      state_.store(State::IDLE);
+      status_message_ = "Stopped";
+      current_fps_ = 0.0;
+    }
+
+    response->success = true;
+    response->message = "Camera stopped";
+    RCLCPP_INFO(this->get_logger(), "Camera stopped via service call");
+  }
+
+  void on_reset(
+    const std::shared_ptr<std_srvs::srv::Trigger::Request> /*request*/,
+    std::shared_ptr<std_srvs::srv::Trigger::Response> response)
+  {
+    // Stop camera if running
+    bool was_running = running_.load();
+    if (was_running) {
+      stop_camera();
+    }
+
+    // Reset tracker state
+    received_init_nodes_ = false;
+    reinit_requested_ = false;
+    algo_total_ = 0.0;
+    pub_data_total_ = 0.0;
+    frames_ = 0;
+
+    // Recreate pipeline manager
+    bool pipeline_use_external = use_external_mask_ || (segmentation_mode_ == "internal");
+    pipeline_manager_ = std::make_unique<trackdlo_core::PipelineManager>(
+      pipeline_use_external,
+      multi_color_dlo_, hsv_lower_,
+      hsv_upper_);
+    update_pipeline_parameters();
+
+    {
+      std::lock_guard<std::mutex> lock(status_mutex_);
+      state_.store(State::IDLE);
+      status_message_ = "Reset complete";
+      tracked_nodes_ = 0;
+      current_fps_ = 0.0;
+    }
+
+    // Restart camera if it was running
+    if (was_running) {
+      if (start_camera()) {
+        running_.store(true);
+        camera_thread_ = std::thread(&TrackDLONode::camera_loop, this);
+        {
+          std::lock_guard<std::mutex> lock(status_mutex_);
+          state_.store(State::INITIALIZING);
+          status_message_ = "Reset complete, camera restarted";
+        }
+      }
+    }
+
+    response->success = true;
+    response->message = "Tracker reset";
+    RCLCPP_INFO(this->get_logger(), "Tracker reset via service call");
+  }
+
+  // ==================== Status publishing ====================
+
+  void publish_status()
+  {
+    trackdlo_msgs::msg::TrackingStatus msg;
+
+    {
+      std::lock_guard<std::mutex> lock(status_mutex_);
+      State s = state_.load();
+      switch (s) {
+        case State::IDLE:
+          msg.state = trackdlo_msgs::msg::TrackingStatus::IDLE;
+          break;
+        case State::INITIALIZING:
+          msg.state = trackdlo_msgs::msg::TrackingStatus::INITIALIZING;
+          break;
+        case State::TRACKING:
+          msg.state = trackdlo_msgs::msg::TrackingStatus::TRACKING;
+          break;
+        case State::ERROR:
+          msg.state = trackdlo_msgs::msg::TrackingStatus::ERROR;
+          break;
+      }
+      msg.message = status_message_;
+      msg.tracked_nodes = tracked_nodes_;
+      msg.fps = current_fps_;
+    }
+
+    status_pub_->publish(msg);
   }
 };
 
