@@ -14,6 +14,7 @@
   <exec_depend>cv_bridge</exec_depend>
   <exec_depend>python3-opencv</exec_depend>
   <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>trackdlo_msgs</exec_depend>
 
   <test_depend>python3-pytest</test_depend>
 

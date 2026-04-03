@@ -26,6 +26,7 @@ setup(
     entry_points={
         'console_scripts': [
             'hsv_segmentation = trackdlo_segmentation.hsv_node:main',
+            'sam2_segmentation = trackdlo_segmentation.sam2_node:main',
         ],
     },
 )

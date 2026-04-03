@@ -32,10 +32,10 @@ class SegmentationNodeBase(Node):
         rgb_topic = self.get_parameter('rgb_topic').value
 
         self.mask_pub = self.create_publisher(
-            Image, '/trackdlo/segmentation_mask', 10
+            Image, '/trackdlo/segmentation_mask', 1
         )
         self.image_sub = self.create_subscription(
-            Image, rgb_topic, self._on_image, 10
+            Image, rgb_topic, self._on_image, 1
         )
 
     def _on_image(self, msg: Image):
