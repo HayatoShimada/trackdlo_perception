@@ -13,6 +13,7 @@ from cv_bridge import CvBridge
 
 import cv2
 import numpy as np
+from trackdlo_msgs.srv import SetPrompt
 
 
 class CompositeViewNode(Node):
@@ -37,6 +38,11 @@ class CompositeViewNode(Node):
             Image, '/trackdlo/results_img', self._cb_results, 1)
 
         self.timer = self.create_timer(1.0 / 30.0, self._timer_cb)
+        self.prompt_cli = self.create_client(
+            SetPrompt, '/trackdlo/sam2/set_prompt')
+        self.orig_size = None  # (h, w) of original camera image
+        self.panel_size = None  # (ph, pw) of display panel
+        cv2.setMouseCallback('TrackDLO Composite View', self._on_mouse)
         self.get_logger().info('Composite view node started')
 
     def _cb_camera(self, msg):
@@ -60,6 +66,8 @@ class CompositeViewNode(Node):
 
         h, w = ref.shape[:2]
         ph, pw = h // 2, w // 2
+        self.orig_size = (h, w)
+        self.panel_size = (ph, pw)
 
         grid = []
         for label, img in self.panels.items():
@@ -77,6 +85,29 @@ class CompositeViewNode(Node):
 
         cv2.imshow('TrackDLO Composite View', composite)
         cv2.waitKey(1)
+
+    def _on_mouse(self, event, x, y, flags, param):
+        if event != cv2.EVENT_LBUTTONDOWN:
+            return
+        if self.orig_size is None or self.panel_size is None:
+            return
+
+        ph, pw = self.panel_size
+        # Camera panel is top-left (0,0) to (pw, ph)
+        if x >= pw or y >= ph:
+            return
+
+        orig_h, orig_w = self.orig_size
+        orig_x = int(x * orig_w / pw)
+        orig_y = int(y * orig_h / ph)
+
+        if self.prompt_cli.service_is_ready():
+            req = SetPrompt.Request()
+            req.x = orig_x
+            req.y = orig_y
+            self.prompt_cli.call_async(req)
+            self.get_logger().info(
+                f'SAM2 prompt sent: ({orig_x}, {orig_y})')
 
     def destroy_node(self):
         cv2.destroyAllWindows()
