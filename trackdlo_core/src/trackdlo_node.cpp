@@ -274,8 +274,18 @@ public:
       std::chrono::seconds(1),
       std::bind(&TrackDLONode::publish_status, this));
 
-    RCLCPP_INFO_STREAM(this->get_logger(), "TrackDLO node initialized. State: IDLE");
-    RCLCPP_INFO_STREAM(this->get_logger(), "Call /trackdlo/start to begin camera capture.");
+    // Auto-start camera (segmentation runs immediately, tracking waits for /trackdlo/start)
+    if (start_camera()) {
+      running_.store(true);
+      camera_thread_ = std::thread(&TrackDLONode::camera_loop, this);
+      RCLCPP_INFO(this->get_logger(),
+        "Camera started. Segmentation active. Call /trackdlo/start to begin tracking.");
+    } else {
+      RCLCPP_ERROR(this->get_logger(), "Failed to start camera on init");
+      std::lock_guard<std::mutex> lock(status_mutex_);
+      state_.store(State::ERROR);
+      status_message_ = "Camera start failed";
+    }
   }
 
 private:
@@ -299,6 +309,7 @@ private:
   std::mutex status_mutex_;
   int tracked_nodes_{0};
   double current_fps_{0.0};
+  std::atomic<bool> tracking_enabled_{false};
 
   // ---------- HSV thresholds ----------
   std::vector<int> hsv_upper_;
@@ -625,6 +636,10 @@ private:
     const Mat & cur_image_orig, const Mat & cur_depth,
     const rclcpp::Time & stamp)
   {
+    if (!tracking_enabled_.load()) {
+      return;
+    }
+
     sensor_msgs::msg::Image::SharedPtr tracking_img_msg =
       cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", cur_image_orig).toImageMsg();
 
@@ -781,80 +796,63 @@ private:
     const std::shared_ptr<std_srvs::srv::Trigger::Request>/*request*/,
     std::shared_ptr<std_srvs::srv::Trigger::Response> response)
   {
-    if (running_.load()) {
+    if (tracking_enabled_.load()) {
       response->success = false;
-      response->message = "Camera is already running";
+      response->message = "Tracking is already enabled";
       return;
     }
 
-    if (!start_camera()) {
-      response->success = false;
-      response->message = "Failed to start camera";
-      {
-        std::lock_guard<std::mutex> lock(status_mutex_);
-        state_.store(State::ERROR);
-        status_message_ = "Camera start failed";
-      }
-      return;
-    }
-
-    running_.store(true);
-    camera_thread_ = std::thread(&TrackDLONode::camera_loop, this);
+    tracking_enabled_.store(true);
 
     {
       std::lock_guard<std::mutex> lock(status_mutex_);
       state_.store(State::INITIALIZING);
-      status_message_ = "Camera started, waiting for init nodes";
+      status_message_ = "Tracking enabled, waiting for init nodes";
     }
 
     response->success = true;
-    response->message = "Camera started";
-    RCLCPP_INFO(this->get_logger(), "Camera started via service call");
+    response->message = "Tracking started";
+    RCLCPP_INFO(this->get_logger(), "Tracking enabled via service call");
   }
 
   void on_stop(
     const std::shared_ptr<std_srvs::srv::Trigger::Request>/*request*/,
     std::shared_ptr<std_srvs::srv::Trigger::Response> response)
   {
-    if (!running_.load()) {
+    if (!tracking_enabled_.load()) {
       response->success = false;
-      response->message = "Camera is not running";
+      response->message = "Tracking is not enabled";
       return;
     }
 
-    stop_camera();
+    tracking_enabled_.store(false);
 
     {
       std::lock_guard<std::mutex> lock(status_mutex_);
       state_.store(State::IDLE);
-      status_message_ = "Stopped";
-      current_fps_ = 0.0;
+      status_message_ = "Tracking stopped (camera still running)";
     }
 
     response->success = true;
-    response->message = "Camera stopped";
-    RCLCPP_INFO(this->get_logger(), "Camera stopped via service call");
+    response->message = "Tracking stopped";
+    RCLCPP_INFO(this->get_logger(), "Tracking disabled via service call");
   }
 
   void on_reset(
     const std::shared_ptr<std_srvs::srv::Trigger::Request>/*request*/,
     std::shared_ptr<std_srvs::srv::Trigger::Response> response)
   {
-    // Stop camera if running
-    bool was_running = running_.load();
-    if (was_running) {
-      stop_camera();
-    }
+    // Disable tracking during reset
+    tracking_enabled_.store(false);
 
     // Reset tracker state
     received_init_nodes_ = false;
-    received_proj_matrix_ = false;
     reinit_requested_ = false;
     algo_total_ = 0.0;
     pub_data_total_ = 0.0;
     frames_ = 0;
 
-    // Recreate pipeline manager
+    // Recreate pipeline manager (camera keeps running)
     bool pipeline_use_external = use_external_mask_ || (segmentation_mode_ == "internal");
     pipeline_manager_ = std::make_unique<trackdlo_core::PipelineManager>(
       pipeline_use_external,
@@ -862,25 +860,14 @@ private:
       hsv_upper_);
     update_pipeline_parameters();
 
+    // Re-enable tracking (will wait for new init_nodes)
+    tracking_enabled_.store(true);
+
     {
       std::lock_guard<std::mutex> lock(status_mutex_);
-      state_.store(State::IDLE);
-      status_message_ = "Reset complete";
+      state_.store(State::INITIALIZING);
+      status_message_ = "Reset, waiting for re-initialization";
       tracked_nodes_ = 0;
-      current_fps_ = 0.0;
-    }
-
-    // Restart camera if it was running
-    if (was_running) {
-      if (start_camera()) {
-        running_.store(true);
-        camera_thread_ = std::thread(&TrackDLONode::camera_loop, this);
-        {
-          std::lock_guard<std::mutex> lock(status_mutex_);
-          state_.store(State::INITIALIZING);
-          status_message_ = "Reset complete, camera restarted";
-        }
-      }
     }
 
     response->success = true;
