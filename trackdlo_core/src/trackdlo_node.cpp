@@ -580,6 +580,19 @@ private:
           cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, element);
 
           pipeline_manager_->set_external_mask(mask);
+
+          // Publish mask for composite_view
+          seg_mask_pub_.publish(
+            *cv_bridge::CvImage(header, "mono8", mask).toImageMsg());
+
+          // Publish overlay
+          Mat seg_overlay;
+          color.copyTo(seg_overlay);
+          Mat color_layer(seg_overlay.size(), CV_8UC3, cv::Scalar(0, 255, 0));
+          color_layer.copyTo(seg_overlay, mask);
+          cv::addWeighted(color, 0.6, seg_overlay, 0.4, 0, seg_overlay);
+          seg_overlay_pub_.publish(
+            *cv_bridge::CvImage(header, "bgr8", seg_overlay).toImageMsg());
         }
 
         // Process the frame
