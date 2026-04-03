@@ -7,12 +7,9 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import (
-    DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction,
-)
-from launch.conditions import IfCondition, LaunchConfigurationEquals
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.actions import DeclareLaunchArgument, OpaqueFunction
+from launch.conditions import IfCondition
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
@@ -20,32 +17,9 @@ def _launch_setup(context, *args, **kwargs):
     bringup_dir = get_package_share_directory('trackdlo_bringup')
     params_file = os.path.join(bringup_dir, 'config', 'realsense_params.yaml')
 
-    segmentation = LaunchConfiguration('segmentation')
     rviz = LaunchConfiguration('rviz')
 
-    # use_external_mask is true when segmentation is not 'hsv'
-    use_external_mask = PythonExpression(["'", segmentation, "' != 'hsv'"])
-
-    # RealSense camera launch
-    realsense_dir = get_package_share_directory('realsense2_camera')
-    realsense_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(realsense_dir, 'launch', 'rs_launch.py')
-        ),
-        launch_arguments={
-            'camera_namespace': '',
-            'depth_module.depth_profile': '640x480x15',
-            'rgb_camera.color_profile': '640x480x15',
-            'align_depth.enable': 'true',
-            'pointcloud.enable': 'false',
-            'temporal_filter.enable': 'true',
-            'decimation_filter.enable': 'true',
-        }.items(),
-    )
-
     return [
-        realsense_launch,
-
         # --- Static TF: base_link -> camera_link ---
         Node(
             package='tf2_ros',
@@ -65,12 +39,7 @@ def _launch_setup(context, *args, **kwargs):
             executable='trackdlo',
             name='trackdlo',
             output='screen',
-            parameters=[
-                params_file,
-                {'use_external_mask': use_external_mask},
-            ],
-            respawn=True,
-            respawn_delay=3.0,
+            parameters=[params_file],
         ),
 
         # --- Python initialization node ---
@@ -79,20 +48,7 @@ def _launch_setup(context, *args, **kwargs):
             executable='init_tracker',
             name='init_tracker',
             output='screen',
-            parameters=[
-                params_file,
-                {'use_external_mask': use_external_mask},
-            ],
-        ),
-
-        # --- HSV Segmentation with GUI (from trackdlo_segmentation) ---
-        Node(
-            package='trackdlo_segmentation',
-            executable='hsv_segmentation',
-            name='hsv_segmentation',
-            output='screen',
             parameters=[params_file],
-            condition=LaunchConfigurationEquals('segmentation', 'hsv_tuner'),
         ),
 
         # --- Composite View (4-panel display) ---
@@ -127,11 +83,6 @@ def _launch_setup(context, *args, **kwargs):
 
 def generate_launch_description():
     return LaunchDescription([
-        DeclareLaunchArgument(
-            'segmentation', default_value='hsv',
-            description='Segmentation method: hsv (built-in), hsv_tuner (GUI)',
-            choices=['hsv', 'hsv_tuner'],
-        ),
         DeclareLaunchArgument(
             'rviz', default_value='true',
             description='Launch RViz2 for visualization',

@@ -6,12 +6,21 @@ trackdlo:
     depth_topic: "/camera/aligned_depth_to_color/image_raw"
     result_frame_id: "camera_color_optical_frame"
 
+    # Camera (librealsense2 direct)
+    camera_width: 424
+    camera_height: 240
+    camera_fps: 30
+    camera_serial_no: ""
+
+    # Segmentation mode: "internal" (built-in HSV) or "external" (ROS topic)
+    segmentation_mode: "internal"
+
     # External mask (automatically set by launch file when using hsv_tuner or sam2)
     use_external_mask: false
 
     # HSV thresholds (used only when use_external_mask is false)
-    hsv_threshold_upper_limit: "135 255 255"
-    hsv_threshold_lower_limit: "85 50 20"
+    hsv_threshold_upper_limit: "180 255 80"
+    hsv_threshold_lower_limit: "0 0 0"
 
     # MCT weights: larger values make the object more rigid
     beta: 0.35
@@ -62,12 +71,12 @@ init_tracker:
     multi_color_dlo: false
     visualize_initialization_process: false
     use_external_mask: false
-    hsv_threshold_upper_limit: "135 255 255"
-    hsv_threshold_lower_limit: "85 50 20"
+    hsv_threshold_upper_limit: "180 255 80"
+    hsv_threshold_lower_limit: "0 0 0"
 
 hsv_segmentation:
   ros__parameters:
     rgb_topic: "/camera/color/image_raw"
-    hsv_threshold_upper_limit: "135 255 255"
-    hsv_threshold_lower_limit: "85 50 20"
+    hsv_threshold_upper_limit: "180 255 80"
+    hsv_threshold_lower_limit: "0 0 0"
     enable_gui: true
