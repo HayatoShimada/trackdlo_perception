@@ -987,9 +987,16 @@ void trackdlo::tracking_step(
   } else {
     RCLCPP_INFO(rclcpp::get_logger("trackdlo"), "Both ends occluded");
 
-    int alignment_node_idx = -1;
+    if (visible_nodes.empty()) {
+      RCLCPP_WARN(rclcpp::get_logger("trackdlo"), "No visible nodes, skipping frame");
+      return;
+    }
+
+    int alignment_node_idx = 0;
     double moved_dist = 999999;
-    for (size_t i = 0; i < visible_nodes.size(); i++) {
+    for (size_t i = 0; i < visible_nodes.size() &&
+         static_cast<int>(i) < guide_nodes_.rows(); i++)
+    {
       if (pt2pt_dis(Y_.row(visible_nodes[i]), guide_nodes_.row(i)) < moved_dist) {
         moved_dist = pt2pt_dis(Y_.row(visible_nodes[i]), guide_nodes_.row(i));
         alignment_node_idx = i;
