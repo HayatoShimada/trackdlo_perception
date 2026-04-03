@@ -737,6 +737,11 @@ std::vector<MatrixXd> trackdlo::traverse_euclidean(
       }
     }
   } else {
+    if (alignment_node_idx >= guide_nodes.rows() ||
+        alignment_node_idx >= static_cast<int>(visible_nodes.size()))
+    {
+      return node_pairs;
+    }
     MatrixXd node_pair(1, 4);
     node_pair << visible_nodes[alignment_node_idx], guide_nodes(alignment_node_idx, 0), guide_nodes(
       alignment_node_idx, 1), guide_nodes(alignment_node_idx, 2);
@@ -987,20 +992,34 @@ void trackdlo::tracking_step(
   } else {
     RCLCPP_INFO(rclcpp::get_logger("trackdlo"), "Both ends occluded");
 
-    if (visible_nodes.empty()) {
-      RCLCPP_WARN(rclcpp::get_logger("trackdlo"), "No visible nodes, skipping frame");
+    if (visible_nodes.empty() ||
+        static_cast<int>(visible_nodes.size()) > guide_nodes_.rows())
+    {
+      RCLCPP_WARN(rclcpp::get_logger("trackdlo"),
+        "Both ends occluded with inconsistent state, skipping frame");
       return;
     }
 
     int alignment_node_idx = 0;
     double moved_dist = 999999;
-    for (size_t i = 0; i < visible_nodes.size() &&
-         static_cast<int>(i) < guide_nodes_.rows(); i++)
-    {
+    for (size_t i = 0; i < visible_nodes.size(); i++) {
+      if (visible_nodes[i] >= Y_.rows() ||
+          static_cast<int>(i) >= guide_nodes_.rows())
+      {
+        continue;
+      }
       if (pt2pt_dis(Y_.row(visible_nodes[i]), guide_nodes_.row(i)) < moved_dist) {
         moved_dist = pt2pt_dis(Y_.row(visible_nodes[i]), guide_nodes_.row(i));
         alignment_node_idx = i;
       }
+    }
+
+    if (alignment_node_idx >= guide_nodes_.rows() ||
+        alignment_node_idx >= static_cast<int>(visible_nodes_extended.size()))
+    {
+      RCLCPP_WARN(rclcpp::get_logger("trackdlo"),
+        "alignment_node_idx out of range, skipping frame");
+      return;
     }
 
     correspondence_priors_ = traverse_euclidean(
