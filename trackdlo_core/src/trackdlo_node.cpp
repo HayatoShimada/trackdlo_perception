@@ -234,7 +234,8 @@ public:
     rgb_pub_ = it.advertise("/camera/color/image_raw", pub_queue_size);
     depth_pub_ = it.advertise("/camera/aligned_depth_to_color/image_raw", pub_queue_size);
     camera_info_pub_ = this->create_publisher<sensor_msgs::msg::CameraInfo>(
-      "/camera/aligned_depth_to_color/camera_info", pub_queue_size);
+      "/camera/aligned_depth_to_color/camera_info",
+      rclcpp::QoS(1).transient_local());
 
     // Result publishers
     tracking_img_pub_ = it.advertise("/trackdlo/results_img", pub_queue_size);
@@ -833,6 +834,7 @@ private:
 
     // Reset tracker state
     received_init_nodes_ = false;
+    received_proj_matrix_ = false;
     reinit_requested_ = false;
     algo_total_ = 0.0;
     pub_data_total_ = 0.0;
