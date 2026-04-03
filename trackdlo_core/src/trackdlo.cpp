@@ -235,8 +235,11 @@ bool trackdlo::cpd_lle(
     int num_of_correspondence_priors = correspondence_priors.size();
 
     for (int i = 0; i < num_of_correspondence_priors; i++) {
+      int index = static_cast<int>(correspondence_priors[i](0, 0));
+      if (index < 0 || index >= M) {
+        continue;
+      }
       MatrixXd temp = MatrixXd::Zero(1, 3);
-      int index = correspondence_priors[i](0, 0);
       temp(0, 0) = correspondence_priors[i](0, 1);
       temp(0, 1) = correspondence_priors[i](0, 2);
       temp(0, 2) = correspondence_priors[i](0, 3);
