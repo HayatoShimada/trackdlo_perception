@@ -28,13 +28,13 @@ class CompositeViewNode(Node):
         }
 
         self.create_subscription(
-            Image, '/camera/color/image_raw', self._cb_camera, 10)
+            Image, '/camera/color/image_raw', self._cb_camera, 1)
         self.create_subscription(
-            Image, '/trackdlo/segmentation_mask_img', self._cb_mask, 10)
+            Image, '/trackdlo/segmentation_mask_img', self._cb_mask, 1)
         self.create_subscription(
-            Image, '/trackdlo/segmentation_overlay', self._cb_overlay, 10)
+            Image, '/trackdlo/segmentation_overlay', self._cb_overlay, 1)
         self.create_subscription(
-            Image, '/trackdlo/results_img', self._cb_results, 10)
+            Image, '/trackdlo/results_img', self._cb_results, 1)
 
         self.timer = self.create_timer(1.0 / 30.0, self._timer_cb)
         self.get_logger().info('Composite view node started')
@@ -86,9 +86,18 @@ class CompositeViewNode(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = CompositeViewNode()
-    rclpy.spin(node)
-    node.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
+        pass
+    finally:
+        cv2.destroyAllWindows()
+        cv2.waitKey(1)
+        node.destroy_node()
+        try:
+            rclpy.shutdown()
+        except Exception:
+            pass
 
 
 if __name__ == '__main__':
