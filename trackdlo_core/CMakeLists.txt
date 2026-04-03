@@ -37,6 +37,9 @@ find_package(ament_index_cpp REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(PCL 1.12 REQUIRED COMPONENTS common io filters)
+find_package(realsense2 REQUIRED)
+find_package(std_srvs REQUIRED)
+find_package(trackdlo_msgs REQUIRED)
 
 include_directories(
   include
@@ -81,7 +84,7 @@ ament_target_dependencies(trackdlo_core
 
 # Main tracking node
 add_executable(trackdlo src/trackdlo_node.cpp)
-target_link_libraries(trackdlo trackdlo_core)
+target_link_libraries(trackdlo trackdlo_core ${realsense2_LIBRARY})
 ament_target_dependencies(trackdlo
   rclcpp
   sensor_msgs
@@ -92,6 +95,8 @@ ament_target_dependencies(trackdlo
   pcl_conversions
   message_filters
   tf2_ros
+  std_srvs
+  trackdlo_msgs
 )
 
 # Evaluation node
