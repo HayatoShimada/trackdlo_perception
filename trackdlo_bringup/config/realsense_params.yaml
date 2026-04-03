@@ -80,3 +80,8 @@ hsv_segmentation:
     hsv_threshold_upper_limit: "180 255 80"
     hsv_threshold_lower_limit: "0 0 0"
     enable_gui: true
+
+sam2_segmentation:
+  ros__parameters:
+    rgb_topic: "/camera/color/image_raw"
+    sam2_model_id: "facebook/sam2.1-hiera-small"

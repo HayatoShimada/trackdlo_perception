@@ -8,7 +8,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, LaunchConfigurationEquals
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
@@ -18,6 +18,8 @@ def _launch_setup(context, *args, **kwargs):
     params_file = os.path.join(bringup_dir, 'config', 'realsense_params.yaml')
 
     rviz = LaunchConfiguration('rviz')
+    segmentation_mode = LaunchConfiguration('segmentation_mode').perform(context)
+    trackdlo_seg_mode = 'external' if segmentation_mode == 'sam2' else segmentation_mode
 
     return [
         # --- Static TF: base_link -> camera_link ---
@@ -39,7 +41,7 @@ def _launch_setup(context, *args, **kwargs):
             executable='trackdlo',
             name='trackdlo',
             output='screen',
-            parameters=[params_file],
+            parameters=[params_file, {'segmentation_mode': trackdlo_seg_mode}],
         ),
 
         # --- Python initialization node ---
@@ -68,6 +70,16 @@ def _launch_setup(context, *args, **kwargs):
             output='screen',
         ),
 
+        # --- SAM2 Segmentation (when segmentation_mode=sam2) ---
+        Node(
+            package='trackdlo_segmentation',
+            executable='sam2_segmentation',
+            name='sam2_segmentation',
+            output='screen',
+            parameters=[params_file],
+            condition=LaunchConfigurationEquals('segmentation_mode', 'sam2'),
+        ),
+
         # --- RViz2 ---
         Node(
             package='rviz2',
@@ -86,6 +98,11 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'rviz', default_value='true',
             description='Launch RViz2 for visualization',
+        ),
+        DeclareLaunchArgument(
+            'segmentation_mode', default_value='internal',
+            description='Segmentation: internal (HSV), external, sam2',
+            choices=['internal', 'external', 'sam2'],
         ),
         OpaqueFunction(function=_launch_setup),
     ])
