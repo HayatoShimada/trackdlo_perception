@@ -4,12 +4,13 @@
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
 
+#include <atomic>
+#include <mutex>
+#include <thread>
+
 #include <librealsense2/rs.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include <trackdlo_msgs/msg/tracking_status.hpp>
-#include <thread>
-#include <atomic>
-#include <mutex>
 
 #include <rclcpp/rclcpp.hpp>
 #include <rcl_interfaces/msg/set_parameters_result.hpp>
@@ -595,7 +596,6 @@ private:
           fps_frame_count = 0;
           last_fps_time = now;
         }
-
       } catch (const rs2::error & e) {
         RCLCPP_ERROR(this->get_logger(), "RealSense error: %s", e.what());
         {
@@ -608,7 +608,8 @@ private:
     }
   }
 
-  void process_frame(const Mat & cur_image_orig, const Mat & cur_depth,
+  void process_frame(
+    const Mat & cur_image_orig, const Mat & cur_depth,
     const rclcpp::Time & stamp)
   {
     sensor_msgs::msg::Image::SharedPtr tracking_img_msg =
@@ -764,7 +765,7 @@ private:
   // ==================== Service callbacks ====================
 
   void on_start(
-    const std::shared_ptr<std_srvs::srv::Trigger::Request> /*request*/,
+    const std::shared_ptr<std_srvs::srv::Trigger::Request>/*request*/,
     std::shared_ptr<std_srvs::srv::Trigger::Response> response)
   {
     if (running_.load()) {
@@ -799,7 +800,7 @@ private:
   }
 
   void on_stop(
-    const std::shared_ptr<std_srvs::srv::Trigger::Request> /*request*/,
+    const std::shared_ptr<std_srvs::srv::Trigger::Request>/*request*/,
     std::shared_ptr<std_srvs::srv::Trigger::Response> response)
   {
     if (!running_.load()) {
@@ -823,7 +824,7 @@ private:
   }
 
   void on_reset(
-    const std::shared_ptr<std_srvs::srv::Trigger::Request> /*request*/,
+    const std::shared_ptr<std_srvs::srv::Trigger::Request>/*request*/,
     std::shared_ptr<std_srvs::srv::Trigger::Response> response)
   {
     // Stop camera if running
