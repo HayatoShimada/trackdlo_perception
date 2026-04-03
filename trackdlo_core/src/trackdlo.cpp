@@ -763,8 +763,11 @@ std::vector<MatrixXd> trackdlo::traverse_euclidean(
     int seg_dist_it = visible_nodes[alignment_node_idx];
     MatrixXd cur_center = guide_nodes.row(alignment_node_idx);
 
-    while (last_found_index + 1 <=
-      static_cast<int>(alignment_node_idx + consecutive_visible_nodes_2.size()) - 1 &&
+    int upper_bound = std::min(
+      static_cast<int>(alignment_node_idx + consecutive_visible_nodes_2.size()),
+      static_cast<int>(guide_nodes.rows()));
+
+    while (last_found_index + 1 <= upper_bound - 1 &&
       seg_dist_it + 1 <= static_cast<int>(geodesic_coord.size()) - 1)
     {
       double look_ahead_dist = fabs(geodesic_coord[seg_dist_it + 1] - geodesic_coord[seg_dist_it]);
@@ -772,7 +775,7 @@ std::vector<MatrixXd> trackdlo::traverse_euclidean(
       std::vector<double> intersection = {};
 
       for (int i = last_found_index;
-        i + 1 <= static_cast<int>(alignment_node_idx + consecutive_visible_nodes_2.size()) - 1;
+        i + 1 <= upper_bound - 1;
         i++)
       {
         std::vector<MatrixXd> intersections = line_sphere_intersection(
@@ -828,7 +831,7 @@ std::vector<MatrixXd> trackdlo::traverse_euclidean(
 
 
     std::vector<int> consecutive_visible_nodes_1 = {visible_nodes[alignment_node_idx]};
-    for (int i = alignment_node_idx - 1; i >= 0; i++) {
+    for (int i = alignment_node_idx - 1; i >= 0; i--) {
       if (visible_nodes[i + 1] - visible_nodes[i] == 1) {
         consecutive_visible_nodes_1.push_back(visible_nodes[i]);
       } else {
