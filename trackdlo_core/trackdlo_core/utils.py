@@ -128,16 +128,18 @@ def compute_cost(chain1, chain2, w_e, w_c, mode):
     if mode == 0:
         cost_euclidean = np.linalg.norm(
             chain1[0] - chain2[0])
-        cost_curvature_1 = np.arccos(np.dot(
+        if cost_euclidean < 1e-10:
+            return w_e * cost_euclidean
+        cost_curvature_1 = np.arccos(np.clip(np.dot(
             chain1[0] - chain2[0],
             chain1[1] - chain1[0]) / (
             np.linalg.norm(chain1[0] - chain1[1])
-            * cost_euclidean))
-        cost_curvature_2 = np.arccos(np.dot(
+            * cost_euclidean), -1.0, 1.0))
+        cost_curvature_2 = np.arccos(np.clip(np.dot(
             chain1[0] - chain2[0],
             chain2[0] - chain2[1]) / (
             np.linalg.norm(chain2[0] - chain2[1])
-            * cost_euclidean))
+            * cost_euclidean), -1.0, 1.0))
         total_cost = (
             w_e * cost_euclidean
             + w_c * (np.abs(cost_curvature_1)
@@ -145,16 +147,18 @@ def compute_cost(chain1, chain2, w_e, w_c, mode):
     elif mode == 1:
         cost_euclidean = np.linalg.norm(
             chain1[0] - chain2[-1])
-        cost_curvature_1 = np.arccos(np.dot(
+        if cost_euclidean < 1e-10:
+            return w_e * cost_euclidean
+        cost_curvature_1 = np.arccos(np.clip(np.dot(
             chain1[0] - chain2[-1],
             chain1[1] - chain1[0]) / (
             np.linalg.norm(chain1[0] - chain1[1])
-            * cost_euclidean))
-        cost_curvature_2 = np.arccos(np.dot(
+            * cost_euclidean), -1.0, 1.0))
+        cost_curvature_2 = np.arccos(np.clip(np.dot(
             chain1[0] - chain2[-1],
             chain2[-1] - chain2[-2]) / (
             np.linalg.norm(chain2[-1] - chain2[-2])
-            * cost_euclidean))
+            * cost_euclidean), -1.0, 1.0))
         total_cost = (
             w_e * cost_euclidean
             + w_c * (np.abs(cost_curvature_1)
@@ -162,16 +166,18 @@ def compute_cost(chain1, chain2, w_e, w_c, mode):
     elif mode == 2:
         cost_euclidean = np.linalg.norm(
             chain1[-1] - chain2[0])
-        cost_curvature_1 = np.arccos(np.dot(
+        if cost_euclidean < 1e-10:
+            return w_e * cost_euclidean
+        cost_curvature_1 = np.arccos(np.clip(np.dot(
             chain2[0] - chain1[-1],
             chain1[-1] - chain1[-2]) / (
             np.linalg.norm(chain1[-1] - chain1[-2])
-            * cost_euclidean))
-        cost_curvature_2 = np.arccos(np.dot(
+            * cost_euclidean), -1.0, 1.0))
+        cost_curvature_2 = np.arccos(np.clip(np.dot(
             chain2[0] - chain1[-1],
             chain2[1] - chain2[0]) / (
             np.linalg.norm(chain2[0] - chain2[1])
-            * cost_euclidean))
+            * cost_euclidean), -1.0, 1.0))
         total_cost = (
             w_e * cost_euclidean
             + w_c * (np.abs(cost_curvature_1)
@@ -179,16 +185,18 @@ def compute_cost(chain1, chain2, w_e, w_c, mode):
     else:
         cost_euclidean = np.linalg.norm(
             chain1[-1] - chain2[-1])
-        cost_curvature_1 = np.arccos(np.dot(
+        if cost_euclidean < 1e-10:
+            return w_e * cost_euclidean
+        cost_curvature_1 = np.arccos(np.clip(np.dot(
             chain2[-1] - chain1[-1],
             chain1[-1] - chain1[-2]) / (
             np.linalg.norm(chain1[-1] - chain1[-2])
-            * cost_euclidean))
-        cost_curvature_2 = np.arccos(np.dot(
+            * cost_euclidean), -1.0, 1.0))
+        cost_curvature_2 = np.arccos(np.clip(np.dot(
             chain2[-1] - chain1[-1],
             chain2[-2] - chain2[-1]) / (
             np.linalg.norm(chain2[-1] - chain2[-2])
-            * cost_euclidean))
+            * cost_euclidean), -1.0, 1.0))
         total_cost = (
             w_e * cost_euclidean
             + w_c * (np.abs(cost_curvature_1)
