@@ -10,7 +10,7 @@ trackdlo_perception is a ROS2 (Humble/Jazzy) system for real-time tracking of De
 
 ### Native Build (ROS2 workspace)
 ```bash
-# Build all packages
+# Build all packages (order matters: bringup must be last)
 colcon build --packages-select trackdlo_msgs trackdlo_segmentation trackdlo_core trackdlo_utils trackdlo_bringup --cmake-args -DCMAKE_BUILD_TYPE=Release
 
 # Build single package
@@ -39,12 +39,26 @@ bash build.sh core
 ROS_DISTRO=jazzy bash build.sh
 ```
 
+Note: The core container rebuilds `trackdlo_utils` and `trackdlo_segmentation` on startup, so Python changes in those packages take effect without a full Docker rebuild.
+
 ### Tests & Linting
 ```bash
-# Run tests
+# Run all tests (includes ament_lint: copyright, flake8, pep257)
 colcon test --packages-select trackdlo_segmentation trackdlo_core trackdlo_utils trackdlo_bringup --return-code-on-test-failure
 
-# Lint Python
+# View test results
+colcon test-result --verbose
+
+# Run a single C++ test (after build)
+./build/trackdlo_core/test_trackdlo
+./build/trackdlo_core/test_image_preprocessor
+./build/trackdlo_core/test_visibility_checker
+
+# Run a single Python test
+python3 -m pytest trackdlo_segmentation/test/test_base.py -v
+python3 -m pytest trackdlo_segmentation/test/test_hsv_node.py -v
+
+# Quick Python lint (without colcon test)
 flake8 trackdlo_core/trackdlo_core/ trackdlo_utils/trackdlo_utils/ trackdlo_segmentation/trackdlo_segmentation/ --max-line-length=150 --ignore=E501,W503,E741
 ```
 
@@ -62,9 +76,14 @@ ros2 launch trackdlo_bringup trackdlo.launch.py rviz:=false
 
 ## Architecture
 
-### Docker Architecture
-Single container communicating via ROS2 topics (host network, CycloneDDS):
-- **trackdlo-core**: RealSense driver + perception + HSV segmentation + composite view + RViz2
+### Build Order & Dependencies
+```
+trackdlo_msgs ─────────┐
+trackdlo_core ─────────┤ (these 3 are independent, can build in parallel)
+trackdlo_segmentation ─┤
+trackdlo_utils ────────┤
+                       └──→ trackdlo_bringup (exec_depends on core, segmentation, utils)
+```
 
 ### Package Structure
 
@@ -77,8 +96,8 @@ Single container communicating via ROS2 topics (host network, CycloneDDS):
 | `trackdlo_msgs` | ROS IDL | ament_cmake | Custom messages (reserved for future use) |
 
 ### Processing Pipeline
-1. **Initialization** (`trackdlo_core/trackdlo_core/initialize.py`): HSV threshold → skeleton extraction → spline fitting → equally-spaced 3D nodes → publishes once to `/trackdlo/init_nodes`
-2. **Per-frame tracking** (`trackdlo_core/src/trackdlo_node.cpp` + `trackdlo.cpp`): RGB-D sync → segmentation mask → point cloud → voxel downsample → visibility estimation → CPD-LLE EM iterations → updated node positions
+1. **Initialization** (`trackdlo_core/trackdlo_core/initialize.py`): HSV threshold -> skeleton extraction -> spline fitting -> equally-spaced 3D nodes -> publishes once to `/trackdlo/init_nodes`
+2. **Per-frame tracking** (`trackdlo_core/src/trackdlo_node.cpp` + `trackdlo.cpp`): RGB-D sync -> segmentation mask -> point cloud -> voxel downsample -> visibility estimation -> CPD-LLE EM iterations -> updated node positions
 
 ### Key Source Files
 - `trackdlo_core/src/trackdlo.cpp` — CPD-LLE algorithm core (cpd_lle method)
@@ -87,7 +106,8 @@ Single container communicating via ROS2 topics (host network, CycloneDDS):
 - `trackdlo_core/trackdlo_core/initialize.py` — Initialization pipeline (InitTrackerNode)
 - `trackdlo_segmentation/trackdlo_segmentation/base.py` — SegmentationNodeBase (pluggable interface)
 - `trackdlo_segmentation/trackdlo_segmentation/hsv_node.py` — HSV segmentation with GUI tuner
-- `trackdlo_bringup/config/realsense_params.yaml` — Tracking parameters
+- `trackdlo_bringup/config/realsense_params.yaml` — Tracking parameters (CPD-LLE tuning, HSV thresholds, topic names)
+- `trackdlo_bringup/config/evaluation_params.yaml` — Evaluation/benchmarking parameters
 
 ### Key ROS2 Topics
 - `/trackdlo/init_nodes` (PointCloud2) — Initial nodes, published once
@@ -98,11 +118,15 @@ Single container communicating via ROS2 topics (host network, CycloneDDS):
 ### Segmentation Architecture
 All segmentation nodes inherit from `SegmentationNodeBase` and publish to `/trackdlo/segmentation_mask` (mono8). New backends (YOLO, DeepLab, etc.) can be added by subclassing `SegmentationNodeBase`.
 
+### CI/CD
+- `.github/workflows/build.yml` — Build and test on push/PR for both Humble and Jazzy distros (CUDA disabled in CI: `-DUSE_CUDA=OFF`)
+- `.github/workflows/release-deb.yml` — Triggered on version tags (`v*`), builds Debian packages via bloom, publishes to gh-pages apt repository
+
 ## Code Conventions
 
-- C++ standard: C++17 with `-O3` optimization for perception
+- C++ standard: C++17 with `-O3` optimization for perception; optional CUDA support (`-DUSE_CUDA=ON`)
 - Commit messages: conventional commits (`feat:`, `fix:`, `docs:`, etc.), both Japanese and English
-- Python linting: flake8 with max-line-length=150
+- Python linting: flake8 with max-line-length=150 (ament_lint runs flake8+pep257+copyright in `colcon test`)
 - ROS2 nodes: C++ nodes inherit `rclcpp::Node`, Python from `rclpy.node.Node`
 - All nodes declare parameters with `declare_parameter()`
 - RGB-D synchronization uses `message_filters::ApproximateTimeSynchronizer`
