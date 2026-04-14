@@ -16,6 +16,7 @@ import numpy as np
 import rclpy
 from rclpy.node import Node
 from rclpy.parameter import Parameter
+from rclpy.qos import QoSProfile, DurabilityPolicy
 from scipy import interpolate
 from sensor_msgs.msg import CameraInfo
 from sensor_msgs.msg import Image
@@ -98,9 +99,12 @@ class InitTrackerNode(Node):
                 'Subscribing to /trackdlo/segmentation_mask')
 
         # Camera info subscriber (destroyed after first message)
+        camera_info_qos = QoSProfile(
+            depth=1,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.camera_info_sub = self.create_subscription(
             CameraInfo, camera_info_topic,
-            self.camera_info_callback, 10)
+            self.camera_info_callback, camera_info_qos)
 
         # Header and fields for point cloud publishing
         self.header = std_msgs.msg.Header()
