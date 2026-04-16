@@ -8,7 +8,9 @@
 
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import Image
+from rclpy.qos import QoSProfile, DurabilityPolicy
+from sensor_msgs.msg import Image, PointCloud2, CameraInfo
+import sensor_msgs_py.point_cloud2 as pc2
 from cv_bridge import CvBridge
 
 import cv2
@@ -36,6 +38,18 @@ class CompositeViewNode(Node):
             Image, '/trackdlo/segmentation_overlay', self._cb_overlay, 1)
         self.create_subscription(
             Image, '/trackdlo/results_img', self._cb_results, 1)
+        self.create_subscription(
+            PointCloud2, '/trackdlo/results_pc', self._cb_pc, 1)
+
+        camera_info_qos = QoSProfile(
+            depth=1,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL
+        )
+        self.create_subscription(
+            CameraInfo, '/camera/aligned_depth_to_color/camera_info', self._cb_camera_info, camera_info_qos)
+
+        self.points_3d = []
+        self.camera_info = None
 
         self.timer = self.create_timer(1.0 / 30.0, self._timer_cb)
         self.prompt_cli = self.create_client(
@@ -58,6 +72,12 @@ class CompositeViewNode(Node):
     def _cb_results(self, msg):
         self.panels['TrackDLO Results'] = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
 
+    def _cb_pc(self, msg):
+        self.points_3d = list(pc2.read_points(msg, field_names=('x', 'y', 'z'), skip_nans=True))
+
+    def _cb_camera_info(self, msg):
+        self.camera_info = msg
+
     def _timer_cb(self):
         # Determine panel size from first available image
         ref = next((img for img in self.panels.values() if img is not None), None)
@@ -65,18 +85,33 @@ class CompositeViewNode(Node):
             return
 
         h, w = ref.shape[:2]
-        ph, pw = h // 2, w // 2
+        ph, pw = h, w
         self.orig_size = (h, w)
         self.panel_size = (ph, pw)
 
         grid = []
         for label, img in self.panels.items():
             if img is not None:
-                panel = cv2.resize(img, (pw, ph))
+                display_img = img.copy()
+                if label == 'TrackDLO Results' and self.points_3d and self.camera_info:
+                    fx = self.camera_info.k[0]
+                    fy = self.camera_info.k[4]
+                    cx = self.camera_info.k[2]
+                    cy = self.camera_info.k[5]
+                    if len(self.points_3d) > 0:
+                        # Display only one point (the first node) to avoid screen clutter
+                        pt = self.points_3d[0]
+                        x, y, z = pt[0], pt[1], pt[2]
+                        if z > 0:
+                            u = int(fx * x / z + cx)
+                            v = int(fy * y / z + cy)
+                            text = f"XYZ: {x:.2f}, {y:.2f}, {z:.2f}"
+                            cv2.putText(display_img, text, (u, v - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+                panel = cv2.resize(display_img, (pw, ph))
             else:
                 panel = np.zeros((ph, pw, 3), dtype=np.uint8)
-            cv2.putText(panel, label, (10, 25),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+            # cv2.putText(panel, label, (10, 25),
+            #            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
             grid.append(panel)
 
         top = np.hstack((grid[0], grid[1]))

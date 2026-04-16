@@ -258,7 +258,7 @@ Visualization Manager:
   Global Options:
     Background Color: 85; 87; 83
     Default Light: true
-    Fixed Frame: camera_link
+    Fixed Frame: camera_color_optical_frame
     Frame Rate: 30
   Name: root
   Tools:

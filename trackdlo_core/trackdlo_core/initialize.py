@@ -225,7 +225,7 @@ class InitTrackerNode(Node):
 
             all_pixel_coords = []
             for chain in extracted_chains:
-                all_pixel_coords += chain
+                all_pixel_coords.extend(chain)
             if len(all_pixel_coords) < 10:
                 self.get_logger().warn(
                     'Too few skeleton points '
@@ -334,9 +334,14 @@ class InitTrackerNode(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = InitTrackerNode()
-    rclpy.spin(node)
-    node.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        node.get_logger().info('Keyboard Interrupt (Ctrl+C) detected, shutting down cleanly...')
+    finally:
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == '__main__':

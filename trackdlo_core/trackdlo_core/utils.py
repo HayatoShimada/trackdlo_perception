@@ -382,8 +382,7 @@ def extract_connected_skeleton(
 
     all_chain_length = np.array(all_chain_length)
     sorted_idx = np.argsort(all_chain_length.copy())
-    chains = np.asarray(chains, dtype=list)
-    sorted_chains = chains[sorted_idx]
+    sorted_chains = [chains[i] for i in sorted_idx]
 
     pruned_chains = []
     for _i in range(0, len(chains)):
@@ -431,9 +430,7 @@ def extract_connected_skeleton(
 
         all_chain_length = np.array(all_chain_length)
         sorted_idx = np.argsort(all_chain_length.copy())
-        leftover_chains = np.asarray(
-            leftover_chains, dtype=list)
-        sorted_chains = leftover_chains[sorted_idx]
+        sorted_chains = [leftover_chains[i] for i in sorted_idx]
 
     print('Finished pruning. Merging remaining chains...')
 
